@@ -1,6 +1,10 @@
 package main
 
 import (
+	"log"
+	"net/http"
+	"os"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -9,15 +13,12 @@ import (
 	"github.com/rs/cors"
 	"github.com/zenith110/portfilo/graph"
 	"github.com/zenith110/portfilo/graph/generated"
-	"log"
-	"net/http"
-	"os"
 )
 
 const defaultPort = "8080"
 
 func main() {
-	port := os.Getenv("GRAPHQLPORT")
+	port := os.Getenv("BACKEND_PORT")
 	domain := os.Getenv("DOMAIN")
 	environment := os.Getenv("ENV")
 	if port == "" {
@@ -26,7 +27,7 @@ func main() {
 	router := chi.NewRouter()
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
-			AllowedOrigins:   []string{"https://*abrahannevarez.dev"},
+			AllowedOrigins:   []string{domain},
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
