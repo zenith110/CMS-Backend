@@ -9,5 +9,5 @@ CMD  ["go", "build", "server.go"]
 
 # Copy the binary and run the binary
 FROM alpine:latest
-COPY --from=builder /home/backend/v2/server .
+COPY --from=builder /home/backend/v2/ .
 CMD ["./server"]
