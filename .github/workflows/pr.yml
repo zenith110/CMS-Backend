@@ -1,0 +1,18 @@
+# Deploys a payload to the server to get the latest data
+name: Backend PR Review
+# Deploys data based off master branch
+on:
+  pull_requests:
+jobs:
+  Linting Backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          # Makes sure the actual branch is checked out when running on pull requests
+          ref: ${{ github.head_ref }}
+      - name: Prettify
+        run: |
+        go fmt .
+  
