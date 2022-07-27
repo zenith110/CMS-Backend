@@ -34,7 +34,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 		panic(fmt.Errorf("error has occured!\n%v", err))
 	}
 	var buffer bytes.Buffer
-	fmt.Println(*input.TitleCard.ContentType)
+	
 	switch *input.TitleCard.ContentType {
 	case "image/png":
 		newImage := ImageScale(srcImage)
@@ -78,11 +78,11 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 	image := model.Image{URL: *input.URL, Type: *input.TitleCard.ContentType, Name: *input.TitleCard.Name, UUID: uuid.NewString()}
 	UploadImageDB(image, url)
 
-	zincData := `{
-		"Url":  *input.URL,
-		"Type": *input.TitleCard.ContentType,
-		"Name": *input.TitleCard.Name,
-	}`
+	zincData := fmt.Sprintf(`{
+		"Url": "%s",
+		"Type": "%s",
+		"Name": "%s"
+	}`, url, *input.TitleCard.ContentType, *input.TitleCard.Name)
 	CreateDocument("images", zincData, *input.UUID)
 	return url
 }
@@ -229,12 +229,11 @@ func UploadToGallery(file *model.File) string {
 	image := model.Image{URL: url, Type: *file.ContentType, Name: *file.Name, UUID: uuid.NewString()}
 	UploadImageDB(image, url)
 	uuid := uuid.New()
-	zincData := `{
-		"Url":  url,
-		"Type": *file.ContentType,
-		"Name": *file.Name,
-	}`
-
+	zincData := fmt.Sprintf(`{
+		"Url": "%s",
+		"Type": "%s",
+		"Name": "%s"
+	}`, url, *file.ContentType, *file.Name)
 	CreateDocument("images", zincData, uuid.String())
 	return url
 }

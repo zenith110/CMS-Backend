@@ -3,7 +3,8 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/zenith110/portfilo/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -23,7 +24,9 @@ func UploadImageDB(image model.Image, url string) (model.Image, error) {
 		log.Fatal(err)
 	}
 
-	fmt.Println("Inserted a single document: ", res.InsertedID)
+	log.WithFields(log.Fields{
+		"article state": "finished insertion",
+	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
 	return image, err
 }
 func GalleryFindImages() (*model.GalleryImages, error) {

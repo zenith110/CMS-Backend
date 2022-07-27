@@ -112,7 +112,6 @@ func FetchArticlesZinc(keyword string) (*model.Articles, error) {
 }
 func DeleteArticles() (*model.Article, error) {
 	client := ConnectToMongo()
-	fmt.Print("Connected to mongodb!")
 	if err := client.Database("blog").Collection("articles").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
 	}

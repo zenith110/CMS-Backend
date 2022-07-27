@@ -3,38 +3,42 @@ package routes
 import (
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 )
 
 func CreateDocument(index string, data string, uuid string) {
 	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
-	password := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
+	password := "password"
 
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_doc/%s", zincBaseUrl, index, uuid)
-
 	req, err := http.NewRequest("PUT", zincDocumentUrl, strings.NewReader(data))
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("error has occured when sending data! %v", err))
 	}
+	
 	req.SetBasicAuth(userName, password)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36")
+	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("error has occured while grabbing data! %v", err))
 	}
 	defer resp.Body.Close()
-	log.Println(resp.StatusCode)
+	
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatal(err)
+		log.Fatal(fmt.Errorf("error occured while reading the data! %v", err))
 	}
-	fmt.Println(string(body))
+	
+	log.WithFields(log.Fields{
+		"article state": "Returning response",
+	}).Info(fmt.Sprintf("Article data: %s", string(body)))
 
 }
 func UpdateDocument(index string, data string, uuid string) {
@@ -50,7 +54,7 @@ func UpdateDocument(index string, data string, uuid string) {
 	}
 	req.SetBasicAuth(userName, password)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36")
+	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -62,7 +66,9 @@ func UpdateDocument(index string, data string, uuid string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(body))
+	log.WithFields(log.Fields{
+		"article state": "Returning response",
+	}).Info(fmt.Sprintf("Article data: %s", string(body)))
 }
 func DeleteDocument(index string, data string, uuid string) {
 	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
@@ -77,7 +83,7 @@ func DeleteDocument(index string, data string, uuid string) {
 	}
 	req.SetBasicAuth(userName, password)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36")
+	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -89,7 +95,9 @@ func DeleteDocument(index string, data string, uuid string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(body))
+	log.WithFields(log.Fields{
+		"article state": "Returning response",
+	}).Info(fmt.Sprintf("Article data: %s", string(body)))
 }
 func SearchDocuments(indexName string, searchTerm string) []byte {
 	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
@@ -114,7 +122,7 @@ func SearchDocuments(indexName string, searchTerm string) []byte {
 	}
 	req.SetBasicAuth(userName, password)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36")
+	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -143,7 +151,7 @@ func DeleteIndex(index string) {
 	}
 	req.SetBasicAuth(userName, password)
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.138 Safari/537.36")
+	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -155,5 +163,7 @@ func DeleteIndex(index string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println(string(body))
+	log.WithFields(log.Fields{
+		"article state": "Returning response",
+	}).Info(fmt.Sprintf("Article data: %s", string(body)))
 }

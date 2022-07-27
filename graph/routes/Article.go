@@ -3,8 +3,9 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
 	"strings"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/zenith110/portfilo/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -33,6 +34,10 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+	log.WithFields(log.Fields{
+		"article state": "pre-insert mongo data",
+	}).Info("Article has been created, inserting into zinc!")
+
 	zincData := fmt.Sprintf(`{
 		"Title":       "%s",
 		"Author":      "%s",
@@ -45,8 +50,14 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"Tags":        "%s"
 	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
 
+	log.WithFields(log.Fields{
+		"article state": "created mongodb instance",
+	}).Info("Article has been created, inserting into zinc!")
+
 	CreateDocument("articles", zincData, *input.UUID)
-	fmt.Println("Inserted a single document: ", res.InsertedID)
+	log.WithFields(log.Fields{
+		"article state": "finished insertion",
+	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
 	return &article, err
 }
 func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
