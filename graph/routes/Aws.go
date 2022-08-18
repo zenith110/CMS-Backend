@@ -34,7 +34,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 		panic(fmt.Errorf("error has occured!\n%v", err))
 	}
 	var buffer bytes.Buffer
-	
+
 	switch *input.TitleCard.ContentType {
 	case "image/png":
 		newImage := ImageScale(srcImage)

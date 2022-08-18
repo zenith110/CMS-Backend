@@ -116,6 +116,7 @@ func DeleteArticles() (*model.Article, error) {
 		log.Fatal(err)
 	}
 	DeleteIndex("articles")
+	DeleteIndex("images")
 	var article model.Article
 	var err error
 	return &article, err

@@ -20,7 +20,7 @@ func CreateDocument(index string, data string, uuid string) {
 	if err != nil {
 		log.Fatal(fmt.Errorf("error has occured when sending data! %v", err))
 	}
-	
+
 	req.SetBasicAuth(userName, password)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
@@ -30,12 +30,12 @@ func CreateDocument(index string, data string, uuid string) {
 		log.Fatal(fmt.Errorf("error has occured while grabbing data! %v", err))
 	}
 	defer resp.Body.Close()
-	
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(fmt.Errorf("error occured while reading the data! %v", err))
 	}
-	
+
 	log.WithFields(log.Fields{
 		"article state": "Returning response",
 	}).Info(fmt.Sprintf("Article data: %s", string(body)))
