@@ -60,6 +60,11 @@ type CreateArticleInfo struct {
 	Tags        []TagData `json:"tags"`
 }
 
+type CreateProjectInput struct {
+	UUID string `json:"uuid"`
+	Name string `json:"name"`
+}
+
 type DeleteBucketInfo struct {
 	UUID       *string `json:"uuid"`
 	BucketName *string `json:"bucketName"`
@@ -78,10 +83,6 @@ type GalleryImages struct {
 	Total  int     `json:"total"`
 }
 
-type GithubProjects struct {
-	Projects []*Project `json:"projects"`
-}
-
 type Image struct {
 	UUID string `json:"uuid"`
 	URL  string `json:"url"`
@@ -95,13 +96,12 @@ type LoginUser struct {
 }
 
 type Project struct {
-	Name           string   `json:"name"`
-	Githublink     string   `json:"githublink"`
-	Description    string   `json:"description"`
-	Createdon      string   `json:"createdon"`
-	Languages      []Tag    `json:"languages"`
-	Topics         []string `json:"topics"`
-	Deploymentlink string   `json:"deploymentlink"`
+	UUID     string    `json:"uuid"`
+	Articles *Articles `json:"articles"`
+}
+
+type Projects struct {
+	Projects []Project `json:"projects"`
 }
 
 type Tag struct {
