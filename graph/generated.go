@@ -44,11 +44,6 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	AccessCode struct {
-		AllowedAccess func(childComplexity int) int
-		StatusCode    func(childComplexity int) int
-	}
-
 	Article struct {
 		Author      func(childComplexity int) int
 		ContentData func(childComplexity int) int
@@ -145,20 +140,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
-
-	case "AccessCode.allowedAccess":
-		if e.complexity.AccessCode.AllowedAccess == nil {
-			break
-		}
-
-		return e.complexity.AccessCode.AllowedAccess(childComplexity), true
-
-	case "AccessCode.statusCode":
-		if e.complexity.AccessCode.StatusCode == nil {
-			break
-		}
-
-		return e.complexity.AccessCode.StatusCode(childComplexity), true
 
 	case "Article.author":
 		if e.complexity.Article.Author == nil {
@@ -442,7 +423,6 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateProjectInput,
 		ec.unmarshalInputDeleteBucketInfo,
 		ec.unmarshalInputFile,
-		ec.unmarshalInputLoginUser,
 		ec.unmarshalInputTagData,
 		ec.unmarshalInputUpdatedArticleInfo,
 	)
@@ -666,94 +646,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
-
-func (ec *executionContext) _AccessCode_statusCode(ctx context.Context, field graphql.CollectedField, obj *model.AccessCode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AccessCode_statusCode(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StatusCode, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AccessCode_statusCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccessCode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AccessCode_allowedAccess(ctx context.Context, field graphql.CollectedField, obj *model.AccessCode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AccessCode_allowedAccess(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AllowedAccess, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AccessCode_allowedAccess(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccessCode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
 
 func (ec *executionContext) _Article_title(ctx context.Context, field graphql.CollectedField, obj *model.Article) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Article_title(ctx, field)
@@ -4670,42 +4562,6 @@ func (ec *executionContext) unmarshalInputFile(ctx context.Context, obj interfac
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLoginUser(ctx context.Context, obj interface{}) (model.LoginUser, error) {
-	var it model.LoginUser
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"username", "password"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "username":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "password":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputTagData(ctx context.Context, obj interface{}) (model.TagData, error) {
 	var it model.TagData
 	asMap := map[string]interface{}{}
@@ -4833,41 +4689,6 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
-
-var accessCodeImplementors = []string{"AccessCode"}
-
-func (ec *executionContext) _AccessCode(ctx context.Context, sel ast.SelectionSet, obj *model.AccessCode) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, accessCodeImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("AccessCode")
-		case "statusCode":
-
-			out.Values[i] = ec._AccessCode_statusCode(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "allowedAccess":
-
-			out.Values[i] = ec._AccessCode_allowedAccess(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
 
 var articleImplementors = []string{"Article"}
 
@@ -5810,21 +5631,6 @@ func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interf
 
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
 	res := graphql.MarshalBoolean(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalID(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalID(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")

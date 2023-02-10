@@ -59,10 +59,7 @@ input UpdatedArticleInfo{
     uuid: String
     tags: [TagData!]
 }
-type AccessCode {
-  statusCode: ID!
-  allowedAccess: Boolean!
-}
+
 type Image {
   uuid: String!
   url: String!
@@ -70,10 +67,7 @@ type Image {
   name: String!
 }
 
-input LoginUser {
-  username: String!
-  password: String!
-}
+
 input AuthorInput {
   name: String!
   profile: String!

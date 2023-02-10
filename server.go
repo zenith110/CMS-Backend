@@ -12,7 +12,7 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
 	"github.com/zenith110/CMS-Backend/graph"
-	"github.com/zenith110/CMS-Backend/graph/generated"
+	generated "github.com/zenith110/CMS-Backend/graph"
 )
 
 const defaultPort = "8080"
@@ -40,6 +40,7 @@ func main() {
 			Debug:            true,
 		}).Handler)
 	}
+
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 	srv.AddTransport(&transport.Websocket{
 		Upgrader: websocket.Upgrader{

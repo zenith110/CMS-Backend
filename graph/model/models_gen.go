@@ -6,11 +6,6 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-type AccessCode struct {
-	StatusCode    string `json:"statusCode"`
-	AllowedAccess bool   `json:"allowedAccess"`
-}
-
 type Article struct {
 	Title       string  `json:"title"`
 	TitleCard   string  `json:"titleCard"`
@@ -88,11 +83,6 @@ type Image struct {
 	URL  string `json:"url"`
 	Type string `json:"type"`
 	Name string `json:"name"`
-}
-
-type LoginUser struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
 }
 
 type Project struct {
