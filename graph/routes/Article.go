@@ -16,6 +16,10 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	/*
 		Creates a temporary array for the article model, loop through the contents of the input for all the tag data
 	*/
+	if input.Jwt == "" {
+		log.Panic("JWT is invalid! It's empty!")
+		panic("JWT is empty!")
+	}
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
@@ -61,6 +65,10 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	return &article, err
 }
 func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
+	if bucket.Jwt == "" {
+		log.Panic("JWT is invalid!")
+		panic("JWT is empty!")
+	}
 	client := ConnectToMongo()
 	collection := client.Database("blog").Collection("articles")
 	article := model.Article{UUID: *bucket.UUID}
@@ -75,19 +83,27 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 	DeleteDocument("articles", zincData, *bucket.UUID)
 	return &article, deleteError
 }
-func FindArticle(title *string) (*model.Article, error) {
+func FindArticle(title *string, jwt *string) (*model.Article, error) {
+	if jwt != nil {
+		log.Panic("JWT is invalid!")
+		panic("JWT is invalid!")
+	}
 	client := ConnectToMongo()
 	collection := client.Database("blog").Collection("articles")
 	var article model.Article
 
 	//Passing the bson.D{{}} as the filter matches documents in the collection
-	err := collection.FindOne(context.TODO(), bson.M{"url": *title}).Decode(&article)
+	err := collection.FindOne(context.TODO(), bson.M{"url": title}).Decode(&article)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return &article, err
 }
 func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
+	if input.Jwt == "" {
+		log.Panic("JWT is empty!")
+		panic("JWT is empty!")
+	}
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {

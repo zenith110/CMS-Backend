@@ -41,26 +41,37 @@ func (r *mutationResolver) CreateProject(ctx context.Context, input *model.Creat
 	panic(fmt.Errorf("not implemented: CreateProject - createProject"))
 }
 
+// CreateUser is the resolver for the createUser field.
+func (r *mutationResolver) CreateUser(ctx context.Context, input *model.UserCreation) (*model.User, error) {
+	user, err := routes.CreateUser(input)
+	return user, err
+}
+
+// LoginUser is the resolver for the loginUser field.
+func (r *mutationResolver) LoginUser(ctx context.Context, email string, password string) (*model.Jwt, error) {
+	panic(fmt.Errorf("not implemented: LoginUser - loginUser"))
+}
+
 // Article is the resolver for the article field.
-func (r *queryResolver) Article(ctx context.Context, title string) (*model.Article, error) {
-	article, err := routes.FindArticle(&title)
+func (r *queryResolver) Article(ctx context.Context, title string, jwt string) (*model.Article, error) {
+	article, err := routes.FindArticle(&title, &jwt)
 	return article, err
 }
 
 // Articles is the resolver for the articles field.
-func (r *queryResolver) Articles(ctx context.Context) (*model.Articles, error) {
-	articles, err := routes.FetchArticles()
+func (r *queryResolver) Articles(ctx context.Context, jwt string) (*model.Articles, error) {
+	articles, err := routes.FetchArticles(&jwt)
 	return articles, err
 }
 
 // Zincarticles is the resolver for the zincarticles field.
-func (r *queryResolver) Zincarticles(ctx context.Context, keyword string) (*model.Articles, error) {
-	articles, err := routes.FetchArticlesZinc(keyword)
+func (r *queryResolver) Zincarticles(ctx context.Context, keyword string, jwt string) (*model.Articles, error) {
+	articles, err := routes.FetchArticlesZinc(keyword, jwt)
 	return articles, err
 }
 
 // GetGalleryImages is the resolver for the getGalleryImages field.
-func (r *queryResolver) GetGalleryImages(ctx context.Context) (*model.GalleryImages, error) {
+func (r *queryResolver) GetGalleryImages(ctx context.Context, jwt string) (*model.GalleryImages, error) {
 	images, err := routes.GalleryFindImages()
 	return images, err
 }

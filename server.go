@@ -25,17 +25,18 @@ func main() {
 		port = defaultPort
 	}
 	router := chi.NewRouter()
+	router.Use()
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
 			AllowedOrigins:   []string{domain},
-			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
+			AllowedMethods:   []string{http.MethodGet},
 			AllowCredentials: true,
 			Debug:            true,
 		}).Handler)
 	} else if environment == "LOCAL" {
 		router.Use(cors.New(cors.Options{
 			AllowedOrigins:   []string{"http://*"},
-			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
+			AllowedMethods:   []string{http.MethodGet},
 			AllowCredentials: true,
 			Debug:            true,
 		}).Handler)

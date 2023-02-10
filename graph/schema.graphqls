@@ -4,10 +4,10 @@ schema {
   mutation: Mutation
 }
 type Query {
-  article(title: String!): Article
-  articles: Articles
-  zincarticles(keyword: String!): Articles
-  getGalleryImages: GalleryImages
+  article(title: String!, jwt: String!): Article
+  articles(jwt: String!): Articles
+  zincarticles(keyword: String!, jwt: String!): Articles
+  getGalleryImages(jwt: String!): GalleryImages
 }
 type Mutation {
   createArticle(
@@ -17,14 +17,35 @@ type Mutation {
   deleteArticle(input: DeleteBucketInfo): Article!
   deleteAllArticles: Article!
   createProject(input: CreateProjectInput): Project!
+  createUser(input: UserCreation): User
+  loginUser(email: String!, password: String!): jwt
+}
+input UserCreation{
+  uuid: String!
+  email: String!
+  password: String!
+}
+type User{
+  email: String!
+  hashedPassword: String!
+  role: String!
+  profilePicture: String!
+  bio: String!
+  profileLInk: String!
+  projects: Projects!
 }
 input CreateProjectInput{
   uuid: String!
   name: String!
+  jwt: String!
+}
+type jwt{
+  token: String!
 }
 input DeleteBucketInfo{
   uuid: String
   bucketName: String
+  jwt: String!
 }
 input CreateArticleInfo{
     title: String
@@ -36,6 +57,7 @@ input CreateArticleInfo{
     description: String
     uuid: String
     tags: [TagData!]
+    jwt: String!
 }
 input File{
   name: String
@@ -58,6 +80,7 @@ input UpdatedArticleInfo{
     description: String
     uuid: String
     tags: [TagData!]
+    jwt: String!
 }
 
 type Image {
@@ -108,6 +131,7 @@ type Tag {
 }
 type Project{
   uuid: String!
+  name: String!
   articles: Articles!
 }
 type Projects{

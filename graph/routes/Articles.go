@@ -48,7 +48,11 @@ type Total struct {
 	Value int64 `json:"value"`
 }
 
-func FetchArticles() (*model.Articles, error) {
+func FetchArticles(jwt *string) (*model.Articles, error) {
+	if jwt != nil {
+		log.Panic("JWT is empty!")
+		panic("JWT is empty!")
+	}
 	var err error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
@@ -84,7 +88,10 @@ func FetchArticles() (*model.Articles, error) {
 
 	return &articles, err
 }
-func FetchArticlesZinc(keyword string) (*model.Articles, error) {
+func FetchArticlesZinc(keyword string, jwt string) (*model.Articles, error) {
+	if jwt == "" {
+		panic("JWT is invalid!")
+	}
 	var err error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
@@ -92,7 +99,7 @@ func FetchArticlesZinc(keyword string) (*model.Articles, error) {
 	data := SearchDocuments("articles", keyword)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
-		fmt.Errorf("error is %v", zincError)
+		panic(fmt.Errorf("error is %v", zincError))
 	}
 
 	hits := zinc.Hits.Hits
