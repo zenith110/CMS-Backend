@@ -11,30 +11,33 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func UploadImageGallery(file *model.File) (string, error) {
-	var err error
-	return UploadToGallery(file), err
-}
+// func UploadImageGallery(file *model.File) (string, error) {
+// 	var err error
+// 	return UploadToGallery(file), err
+// }
 
-func UploadImageDB(image model.Image, url string) (model.Image, error) {
+func UploadImageDB(image model.Image, url string, email string, project string) (model.Image, error) {
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("images")
+	collection := client.Database(email).Collection("images")
 	res, err := collection.InsertOne(context.TODO(), image)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.WithFields(log.Fields{
+	defer log.WithFields(log.Fields{
 		"article state": "finished insertion",
 	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
+	defer CloseClientDB()
 	return image, err
 }
-func GalleryFindImages() (*model.GalleryImages, error) {
+func GalleryFindImages(jwt string, email string) (*model.GalleryImages, error) {
+	if jwt != "" {
+		panic("JWT is not correct!")
+	}
 	var err error
 	// Create a temporary array of pointers for Article
 	var imagesStorage []model.Image
 	client := ConnectToMongo()
-	db := client.Database("blog").Collection("images")
+	db := client.Database(email).Collection("images")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
@@ -62,6 +65,6 @@ func GalleryFindImages() (*model.GalleryImages, error) {
 
 	// Close the cursor once finished
 	cur.Close(context.TODO())
-
+	defer CloseClientDB()
 	return &images, err
 }

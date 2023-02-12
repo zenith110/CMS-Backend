@@ -31,7 +31,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	}
 	imageURL := UploadFileToS3(input)
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("articles")
+	collection := client.Database(input.Project).Collection("articles")
 	author := model.Author{Name: *input.Author, Profile: "", Picture: ""}
 	article := model.Article{Title: *input.Title, Author: &author, ContentData: *input.ContentData, DateWritten: *input.DateWritten, URL: *input.URL, Description: *input.Description, UUID: *input.UUID, Tags: tags, TitleCard: imageURL}
 	res, err := collection.InsertOne(context.TODO(), article)
@@ -51,8 +51,9 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"Description": "%s",
 		"UUID":        "%s",
 		"TitleCard":   "%s",
-		"Tags":        "%s"
-	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
+		"Tags":        "%s",
+		"Project": 	   "%s",
+	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.Project)
 
 	log.WithFields(log.Fields{
 		"article state": "created mongodb instance",

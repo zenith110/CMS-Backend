@@ -13,6 +13,7 @@ import (
 	"github.com/rs/cors"
 	"github.com/zenith110/CMS-Backend/graph"
 	generated "github.com/zenith110/CMS-Backend/graph"
+	"github.com/zenith110/CMS-Backend/graph/routes"
 )
 
 const defaultPort = "8080"
@@ -53,6 +54,9 @@ func main() {
 			WriteBufferSize: 1024,
 		},
 	})
+	// On boot, always create the default admin
+	routes.CreateDefaultAdmin()
+
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 

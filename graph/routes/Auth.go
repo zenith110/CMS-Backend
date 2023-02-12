@@ -26,54 +26,117 @@ func hashAndSalt(password []byte) string {
 	// convert the bytes to a string and return it
 	return string(hash)
 }
-func CreateUser(input *model.UserCreation) (*model.User, error) {
+func CreateDefaultAdmin() {
 	client := ConnectToMongo()
-	db := client.Database("blog").Collection("Users")
+	dbrole := client.Database("users").Collection("Admin")
+	dbnormal := client.Database("blog").Collection("Users")
+	var roleUserlookup model.User
+	var userlookup model.User
+	email := os.Getenv("ADMINEMAIL")
+	// Looks up the user
+	dbroleerr := dbrole.FindOne(context.TODO(), bson.M{"email": email}).Decode(&roleUserlookup)
+	dbnormalerr := dbrole.FindOne(context.TODO(), bson.M{"email": email, "role": "Admin"}).Decode(&userlookup)
+	if dbroleerr != nil && dbnormalerr != nil {
+		var projects model.Projects
+		password := os.Getenv("ADMINPASSWORD")
+		hashedPassword := hashAndSalt([]byte(password))
+		frontendUri := os.Getenv("CMSFRONTENDURI")
+		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: "", ProfileLInk: fmt.Sprintf("%s/%s", frontendUri, email), Role: "Admin", Projects: &projects}
+		_, dbroleInserterr := dbrole.InsertOne(context.TODO(), user)
+		_, dbnormalInserterr := dbnormal.InsertOne(context.TODO(), user)
+		if dbroleInserterr != nil || dbnormalInserterr != nil {
+			fmt.Printf("error is %v", dbnormalInserterr)
+		}
+	} else {
+		fmt.Printf("%s has an account associated already!!", email)
+	}
+}
+func CreateUser(input *model.UserCreation) (*model.User, error) {
+	if input.Jwt == "" {
+		panic("JWT is invalid!")
+	}
+	client := ConnectToMongo()
+	dbrole := client.Database("users").Collection(*&input.Role)
+	dbnormal := client.Database("blog").Collection("Users")
+	var roleUserlookup model.User
 	var userlookup model.User
 	email := input.Email
 	// Looks up the user
-	err := db.FindOne(context.TODO(), bson.M{"email": email}).Decode(&userlookup)
-	if err != nil {
+	dbroleerr := dbrole.FindOne(context.TODO(), bson.M{"email": email}).Decode(&roleUserlookup)
+	dbnormalerr := dbrole.FindOne(context.TODO(), bson.M{"email": email}).Decode(&userlookup)
+	if dbroleerr != nil && dbnormalerr != nil {
 		var projects model.Projects
 		password := input.Password
 		hashedPassword := hashAndSalt([]byte(password))
 		frontendUri := os.Getenv("CMSFRONTENDURI")
-		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: "", ProfileLInk: fmt.Sprintf("%s/%s", frontendUri, email), Role: "User", Projects: &projects}
-		_, err := db.InsertOne(context.TODO(), user)
-		if err != nil {
-			fmt.Printf("error is %v", err)
+		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: "", ProfileLInk: fmt.Sprintf("%s/%s", frontendUri, email), Role: input.Role, Projects: &projects}
+		_, dbroleInserterr := dbrole.InsertOne(context.TODO(), user)
+		_, dbnormalInserterr := dbnormal.InsertOne(context.TODO(), user)
+		if dbroleInserterr != nil || dbnormalInserterr != nil {
+			fmt.Printf("error is %v", dbnormalInserterr)
 		}
-		return &user, err
+		defer CloseClientDB()
+		return &user, dbnormalInserterr
 	}
 	var projects model.Projects
-	return &model.User{Email: "", HashedPassword: "", Role: "", ProfilePicture: "", ProfileLInk: "", Projects: &projects}, err
+	return &model.User{Email: "", HashedPassword: "", Role: "", ProfilePicture: "", ProfileLInk: "", Projects: &projects}, nil
 }
 
-func Authenticate(email string, password string, jwt string) model.User {
+func AuthenticateNonReaders(email string, password string, jwt string, role string) model.User {
 	if jwt == "" {
 		panic("JWT is not valid!")
 	}
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("Users")
+	collection := client.Database("users").Collection(role)
 	var user model.User
 	hashedPassword := hashAndSalt([]byte(password))
 	//Passing the bson.D{{}} as the filter matches documents in the collection
-	err := collection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
+	err := collection.FindOne(context.TODO(), bson.M{"email": email, role: role}).Decode(&user)
 	if err != nil {
 		log.Fatal(err)
 	}
 	if user.HashedPassword == hashedPassword {
 		return user
 	}
+	defer CloseClientDB()
 	return user
 }
-func Login() string {
+func AuthenticateReaders(email string, password string) model.User {
+	client := ConnectToMongo()
+	collection := client.Database("user").Collection("Reader")
+	var user model.User
+	hashedPassword := hashAndSalt([]byte(password))
+	//Passing the bson.D{{}} as the filter matches documents in the collection
+	err := collection.FindOne(context.TODO(), bson.M{"email": email, "role": "Reader"}).Decode(&user)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if user.HashedPassword == hashedPassword {
+		return user
+	}
+	defer CloseClientDB()
+	return user
+}
+func Login(email string, password string) (string, error) {
 	var sampleSecretKey = []byte(os.Getenv("SECRETKEY"))
 	token := jwt.New(jwt.SigningMethodEdDSA)
 	tokenString, err := token.SignedString(sampleSecretKey)
 	if err != nil {
 		return "", err
 	}
-
+	client := ConnectToMongo()
+	collection := client.Database("blog").Collection("Users")
+	var user model.User
+	hashedPassword := hashAndSalt([]byte(password))
+	//Passing the bson.D{{}} as the filter matches documents in the collection
+	findErr := collection.FindOne(context.TODO(), bson.M{"email": email}).Decode(&user)
+	if findErr != nil {
+		log.Fatal(err)
+	}
+	if user.HashedPassword == hashedPassword {
+		defer CloseClientDB()
+		return tokenString, nil
+	}
+	defer CloseClientDB()
 	return tokenString, nil
 }

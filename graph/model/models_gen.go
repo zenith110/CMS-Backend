@@ -54,12 +54,15 @@ type CreateArticleInfo struct {
 	UUID        *string   `json:"uuid"`
 	Tags        []TagData `json:"tags"`
 	Jwt         string    `json:"jwt"`
+	Project     string    `json:"project"`
+	Email       string    `json:"email"`
 }
 
 type CreateProjectInput struct {
-	UUID string `json:"uuid"`
-	Name string `json:"name"`
-	Jwt  string `json:"jwt"`
+	UUID   string `json:"uuid"`
+	Name   string `json:"name"`
+	Jwt    string `json:"jwt"`
+	Author string `json:"author"`
 }
 
 type DeleteBucketInfo struct {
@@ -92,6 +95,7 @@ type Project struct {
 	UUID     string    `json:"uuid"`
 	Name     string    `json:"name"`
 	Articles *Articles `json:"articles"`
+	Authur   string    `json:"authur"`
 }
 
 type Projects struct {
@@ -133,6 +137,8 @@ type UserCreation struct {
 	UUID     string `json:"uuid"`
 	Email    string `json:"email"`
 	Password string `json:"password"`
+	Jwt      string `json:"jwt"`
+	Role     string `json:"role"`
 }
 
 type Jwt struct {

@@ -6,7 +6,6 @@ package graph
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/zenith110/CMS-Backend/graph/model"
 	"github.com/zenith110/CMS-Backend/graph/routes"
@@ -19,26 +18,27 @@ func (r *mutationResolver) CreateArticle(ctx context.Context, input *model.Creat
 }
 
 // UpdateArticle is the resolver for the updateArticle field.
-func (r *mutationResolver) UpdateArticle(ctx context.Context, input *model.UpdatedArticleInfo) (*model.Article, error) {
+func (r *mutationResolver) UpdateArticle(ctx context.Context, jwt string, email string, password string, input *model.UpdatedArticleInfo) (*model.Article, error) {
 	article, err := routes.UpdateArticle(input)
 	return article, err
 }
 
 // DeleteArticle is the resolver for the deleteArticle field.
-func (r *mutationResolver) DeleteArticle(ctx context.Context, input *model.DeleteBucketInfo) (*model.Article, error) {
+func (r *mutationResolver) DeleteArticle(ctx context.Context, jwt string, email string, password string, project string, input *model.DeleteBucketInfo) (*model.Article, error) {
 	article, err := routes.DeleteArticle(input)
 	return article, err
 }
 
 // DeleteAllArticles is the resolver for the deleteAllArticles field.
-func (r *mutationResolver) DeleteAllArticles(ctx context.Context) (*model.Article, error) {
-	article, err := routes.DeleteArticles()
+func (r *mutationResolver) DeleteAllArticles(ctx context.Context, jwt string, email string, password string, project string) (*model.Article, error) {
+	article, err := routes.DeleteArticles(jwt, email, password, project)
 	return article, err
 }
 
 // CreateProject is the resolver for the createProject field.
-func (r *mutationResolver) CreateProject(ctx context.Context, input *model.CreateProjectInput) (*model.Project, error) {
-	panic(fmt.Errorf("not implemented: CreateProject - createProject"))
+func (r *mutationResolver) CreateProject(ctx context.Context, jwt string, email string, password string, role string, input *model.CreateProjectInput) (*model.Project, error) {
+	project, err := routes.CreateProject(jwt, email, password, role, input)
+	return project, err
 }
 
 // CreateUser is the resolver for the createUser field.
@@ -48,32 +48,45 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input *model.UserCrea
 }
 
 // LoginUser is the resolver for the loginUser field.
-func (r *mutationResolver) LoginUser(ctx context.Context, email string, password string) (*model.Jwt, error) {
-	panic(fmt.Errorf("not implemented: LoginUser - loginUser"))
+func (r *mutationResolver) LoginUser(ctx context.Context, email string, password string) (string, error) {
+	jwt, err := routes.Login(email, password)
+	return jwt, err
+}
+
+// DeleteProject is the resolver for the deleteProject field.
+func (r *mutationResolver) DeleteProject(ctx context.Context, jwt string, email string, password string, project string, uuid string) (string, error) {
+	message, err := routes.DeleteProject(jwt, email, password, project, uuid)
+	return message, err
 }
 
 // Article is the resolver for the article field.
-func (r *queryResolver) Article(ctx context.Context, title string, jwt string) (*model.Article, error) {
-	article, err := routes.FindArticle(&title, &jwt)
+func (r *queryResolver) Article(ctx context.Context, title string, project string, jwt string, email string, password string) (*model.Article, error) {
+	article, err := routes.FindArticle(&title, &project)
 	return article, err
 }
 
 // Articles is the resolver for the articles field.
-func (r *queryResolver) Articles(ctx context.Context, jwt string) (*model.Articles, error) {
-	articles, err := routes.FetchArticles(&jwt)
+func (r *queryResolver) Articles(ctx context.Context, jwt string, project string, email string, password string) (*model.Articles, error) {
+	articles, err := routes.FetchArticles(jwt, email, password, project)
 	return articles, err
 }
 
 // Zincarticles is the resolver for the zincarticles field.
-func (r *queryResolver) Zincarticles(ctx context.Context, keyword string, jwt string) (*model.Articles, error) {
-	articles, err := routes.FetchArticlesZinc(keyword, jwt)
+func (r *queryResolver) Zincarticles(ctx context.Context, keyword string, jwt string, project string) (*model.Articles, error) {
+	articles, err := routes.FetchArticlesZinc(keyword, jwt, project)
 	return articles, err
 }
 
 // GetGalleryImages is the resolver for the getGalleryImages field.
-func (r *queryResolver) GetGalleryImages(ctx context.Context, jwt string) (*model.GalleryImages, error) {
-	images, err := routes.GalleryFindImages()
+func (r *queryResolver) GetGalleryImages(ctx context.Context, jwt string, email string) (*model.GalleryImages, error) {
+	images, err := routes.GalleryFindImages(jwt, email)
 	return images, err
+}
+
+// GetProjects is the resolver for the getProjects field.
+func (r *queryResolver) GetProjects(ctx context.Context, jwt string, email string, password string) (*model.Projects, error) {
+	projects, err := routes.GetProjects(jwt, email, password)
+	return projects, err
 }
 
 // Mutation returns MutationResolver implementation.

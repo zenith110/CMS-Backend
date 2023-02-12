@@ -4,26 +4,30 @@ schema {
   mutation: Mutation
 }
 type Query {
-  article(title: String!, jwt: String!): Article
-  articles(jwt: String!): Articles
-  zincarticles(keyword: String!, jwt: String!): Articles
-  getGalleryImages(jwt: String!): GalleryImages
+  article(title: String!, project: String!, jwt: String!, email: String!, password: String!): Article
+  articles(jwt: String!, project: String!, email: String!, password: String!): Articles
+  zincarticles(keyword: String!, jwt: String!, project: String!): Articles
+  getGalleryImages(jwt: String!, email: String!): GalleryImages
+  getProjects(jwt: String!, email: String!, password: String!): Projects
 }
 type Mutation {
   createArticle(
     input: CreateArticleInfo
   ): Article!
-  updateArticle(input: UpdatedArticleInfo): Article!
-  deleteArticle(input: DeleteBucketInfo): Article!
-  deleteAllArticles: Article!
-  createProject(input: CreateProjectInput): Project!
+  updateArticle(jwt: String!, email: String!, password: String!, input: UpdatedArticleInfo): Article!
+  deleteArticle(jwt: String!, email: String!, password: String!, project: String!, input: DeleteBucketInfo): Article!
+  deleteAllArticles(jwt: String!, email: String!, password: String!, project: String!): Article!
+  createProject(jwt: String!, email: String!, password: String!, role: String!, input: CreateProjectInput): Project!
   createUser(input: UserCreation): User
-  loginUser(email: String!, password: String!): jwt
+  loginUser(email: String!, password: String!): String!
+  deleteProject(jwt: String!, email: String!, password: String!, project: String!, uuid: String!): String!
 }
 input UserCreation{
   uuid: String!
   email: String!
   password: String!
+  jwt: String!
+  role: String!
 }
 type User{
   email: String!
@@ -38,6 +42,7 @@ input CreateProjectInput{
   uuid: String!
   name: String!
   jwt: String!
+  author: String!
 }
 type jwt{
   token: String!
@@ -58,6 +63,8 @@ input CreateArticleInfo{
     uuid: String
     tags: [TagData!]
     jwt: String!
+    project: String!
+    email: String!
 }
 input File{
   name: String
@@ -133,6 +140,7 @@ type Project{
   uuid: String!
   name: String!
   articles: Articles!
+  authur: String!
 }
 type Projects{
   projects: [Project!]!
