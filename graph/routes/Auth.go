@@ -140,3 +140,20 @@ func Login(email string, password string) (string, error) {
 	defer CloseClientDB()
 	return tokenString, nil
 }
+func JWTValidityCheck(jwtToken string) (string, error) {
+	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
+		_, ok := token.Method.(*jwt.SigningMethodECDSA)
+		if !ok {
+			return "Unauthroized!", nil
+		}
+		return "", nil
+	})
+	if err != nil {
+		return "Unauthroized!", nil
+	}
+	if token.Valid {
+		return "Authorized", nil
+	} else {
+		return "Unauthorized!", nil
+	}
+}

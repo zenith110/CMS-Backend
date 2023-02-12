@@ -11,8 +11,9 @@ import (
 )
 
 func CreateProject(jwt string, email string, password string, role string, input *model.CreateProjectInput) (*model.Project, error) {
-	if jwt == "" {
-		panic("JWT is invalid!!")
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	user := AuthenticateNonReaders(email, password, jwt, role)
 	if user.Role != "Creator" || user.Role == "Admin" {
@@ -33,9 +34,9 @@ func CreateProject(jwt string, email string, password string, role string, input
 }
 
 func GetProjects(jwt string, email string, password string) (*model.Projects, error) {
-	if jwt != "" {
-		log.Panic("JWT is empty!")
-		panic("JWT is empty!")
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	var err error
 	// Create a temporary array of pointers for Article
@@ -73,9 +74,9 @@ func GetProjects(jwt string, email string, password string) (*model.Projects, er
 	return &projects, err
 }
 func DeleteProject(jwt string, email string, password string, project string, uuid string) (string, error) {
-	if jwt == "" {
-		log.Panic("JWT is invalid!")
-		panic("JWT is empty!")
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
 	collection := client.Database(email).Collection("projects")

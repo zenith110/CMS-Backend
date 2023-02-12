@@ -4,7 +4,7 @@ schema {
   mutation: Mutation
 }
 type Query {
-  article(title: String!, project: String!, jwt: String!, email: String!, password: String!): Article
+  article(title: String!, project: String!, jwt: String!): Article
   articles(jwt: String!, project: String!, email: String!, password: String!): Articles
   zincarticles(keyword: String!, jwt: String!, project: String!): Articles
   getGalleryImages(jwt: String!, email: String!): GalleryImages
@@ -21,6 +21,7 @@ type Mutation {
   createUser(input: UserCreation): User
   loginUser(email: String!, password: String!): String!
   deleteProject(jwt: String!, email: String!, password: String!, project: String!, uuid: String!): String!
+
 }
 input UserCreation{
   uuid: String!

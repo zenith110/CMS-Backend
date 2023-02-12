@@ -16,9 +16,9 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	/*
 		Creates a temporary array for the article model, loop through the contents of the input for all the tag data
 	*/
-	if input.Jwt == "" {
-		log.Panic("JWT is invalid! It's empty!")
-		panic("JWT is empty!")
+	message, _ := JWTValidityCheck(input.Jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	var tags []model.Tag
 	var tagsString []string
@@ -66,9 +66,9 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	return &article, err
 }
 func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
-	if bucket.Jwt == "" {
-		log.Panic("JWT is invalid!")
-		panic("JWT is empty!")
+	message, _ := JWTValidityCheck(bucket.Jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
 	collection := client.Database("blog").Collection("articles")
@@ -84,13 +84,13 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 	DeleteDocument("articles", zincData, *bucket.UUID)
 	return &article, deleteError
 }
-func FindArticle(title *string, jwt *string) (*model.Article, error) {
-	if jwt != nil {
-		log.Panic("JWT is invalid!")
-		panic("JWT is invalid!")
+func FindArticle(title string, jwt string, project string) (*model.Article, error) {
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("articles")
+	collection := client.Database(project).Collection("articles")
 	var article model.Article
 
 	//Passing the bson.D{{}} as the filter matches documents in the collection
@@ -101,9 +101,9 @@ func FindArticle(title *string, jwt *string) (*model.Article, error) {
 	return &article, err
 }
 func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
-	if input.Jwt == "" {
-		log.Panic("JWT is empty!")
-		panic("JWT is empty!")
+	message, _ := JWTValidityCheck(input.Jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	var tags []model.Tag
 	var tagsString []string

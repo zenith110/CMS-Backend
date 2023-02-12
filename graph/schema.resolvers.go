@@ -60,8 +60,8 @@ func (r *mutationResolver) DeleteProject(ctx context.Context, jwt string, email 
 }
 
 // Article is the resolver for the article field.
-func (r *queryResolver) Article(ctx context.Context, title string, project string, jwt string, email string, password string) (*model.Article, error) {
-	article, err := routes.FindArticle(&title, &project)
+func (r *queryResolver) Article(ctx context.Context, title string, project string, jwt string) (*model.Article, error) {
+	article, err := routes.FindArticle(title, project, project)
 	return article, err
 }
 

@@ -30,8 +30,9 @@ func UploadImageDB(image model.Image, url string, email string, project string) 
 	return image, err
 }
 func GalleryFindImages(jwt string, email string) (*model.GalleryImages, error) {
-	if jwt != "" {
-		panic("JWT is not correct!")
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	var err error
 	// Create a temporary array of pointers for Article

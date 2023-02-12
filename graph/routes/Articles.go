@@ -49,9 +49,9 @@ type Total struct {
 }
 
 func FetchArticles(jwt string, email string, password string, project string) (*model.Articles, error) {
-	if jwt != "" {
-		log.Panic("JWT is empty!")
-		panic("JWT is empty!")
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	var err error
 	// Create a temporary array of pointers for Article
@@ -89,8 +89,9 @@ func FetchArticles(jwt string, email string, password string, project string) (*
 	return &articles, err
 }
 func FetchArticlesZinc(keyword string, jwt string, project string) (*model.Articles, error) {
-	if jwt == "" {
-		panic("JWT is invalid!")
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
 	}
 	var err error
 	// Create a temporary array of pointers for Article
@@ -118,6 +119,10 @@ func FetchArticlesZinc(keyword string, jwt string, project string) (*model.Artic
 	return &articles, err
 }
 func DeleteArticles(jwt string, email string, password string, project string) (*model.Article, error) {
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	client := ConnectToMongo()
 	if err := client.Database(project).Collection("articles").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
