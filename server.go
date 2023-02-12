@@ -12,7 +12,8 @@ import (
 	"github.com/gorilla/websocket"
 	"github.com/rs/cors"
 	"github.com/zenith110/CMS-Backend/graph"
-	"github.com/zenith110/CMS-Backend/graph/generated"
+	generated "github.com/zenith110/CMS-Backend/graph"
+	"github.com/zenith110/CMS-Backend/graph/routes"
 )
 
 const defaultPort = "8080"
@@ -25,21 +26,23 @@ func main() {
 		port = defaultPort
 	}
 	router := chi.NewRouter()
+	router.Use()
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
 			AllowedOrigins:   []string{domain},
-			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
+			AllowedMethods:   []string{http.MethodGet},
 			AllowCredentials: true,
 			Debug:            true,
 		}).Handler)
 	} else if environment == "LOCAL" {
 		router.Use(cors.New(cors.Options{
 			AllowedOrigins:   []string{"http://*"},
-			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
+			AllowedMethods:   []string{http.MethodGet},
 			AllowCredentials: true,
 			Debug:            true,
 		}).Handler)
 	}
+
 	srv := handler.NewDefaultServer(generated.NewExecutableSchema(generated.Config{Resolvers: &graph.Resolver{}}))
 	srv.AddTransport(&transport.Websocket{
 		Upgrader: websocket.Upgrader{
@@ -51,6 +54,9 @@ func main() {
 			WriteBufferSize: 1024,
 		},
 	})
+	// On boot, always create the default admin
+	routes.CreateDefaultAdmin()
+
 	router.Handle("/", playground.Handler("GraphQL playground", "/query"))
 	router.Handle("/query", srv)
 

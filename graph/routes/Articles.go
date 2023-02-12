@@ -48,12 +48,16 @@ type Total struct {
 	Value int64 `json:"value"`
 }
 
-func FetchArticles() (*model.Articles, error) {
+func FetchArticles(jwt string, email string, password string, project string) (*model.Articles, error) {
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	var err error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	client := ConnectToMongo()
-	db := client.Database("blog").Collection("articles")
+	db := client.Database(project).Collection("articles")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
@@ -84,15 +88,19 @@ func FetchArticles() (*model.Articles, error) {
 
 	return &articles, err
 }
-func FetchArticlesZinc(keyword string) (*model.Articles, error) {
+func FetchArticlesZinc(keyword string, jwt string, project string) (*model.Articles, error) {
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	var err error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	var zinc Zinc
-	data := SearchDocuments("articles", keyword)
+	data := SearchDocuments(fmt.Sprintf("%s/articles", project), keyword)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
-		fmt.Errorf("error is %v", zincError)
+		panic(fmt.Errorf("error is %v", zincError))
 	}
 
 	hits := zinc.Hits.Hits
@@ -110,13 +118,19 @@ func FetchArticlesZinc(keyword string) (*model.Articles, error) {
 	var articles = model.Articles{Article: articlesStorage, Total: totalArticles}
 	return &articles, err
 }
-func DeleteArticles() (*model.Article, error) {
+func DeleteArticles(jwt string, email string, password string, project string) (*model.Article, error) {
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	client := ConnectToMongo()
-	if err := client.Database("blog").Collection("articles").Drop(context.TODO()); err != nil {
+	if err := client.Database(project).Collection("articles").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
 	}
-	DeleteIndex("articles")
-	DeleteIndex("images")
+	articlesIndex := fmt.Sprintf("%s/articles", project)
+	imagesIndex := fmt.Sprintf("%s/images", project)
+	DeleteIndex(articlesIndex)
+	DeleteIndex(imagesIndex)
 	var article model.Article
 	var err error
 	return &article, err

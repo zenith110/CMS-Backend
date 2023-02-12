@@ -6,11 +6,6 @@ import (
 	"github.com/99designs/gqlgen/graphql"
 )
 
-type AccessCode struct {
-	StatusCode    string `json:"statusCode"`
-	AllowedAccess bool   `json:"allowedAccess"`
-}
-
 type Article struct {
 	Title       string  `json:"title"`
 	TitleCard   string  `json:"titleCard"`
@@ -58,16 +53,22 @@ type CreateArticleInfo struct {
 	Description *string   `json:"description"`
 	UUID        *string   `json:"uuid"`
 	Tags        []TagData `json:"tags"`
+	Jwt         string    `json:"jwt"`
+	Project     string    `json:"project"`
+	Email       string    `json:"email"`
 }
 
 type CreateProjectInput struct {
-	UUID string `json:"uuid"`
-	Name string `json:"name"`
+	UUID   string `json:"uuid"`
+	Name   string `json:"name"`
+	Jwt    string `json:"jwt"`
+	Author string `json:"author"`
 }
 
 type DeleteBucketInfo struct {
 	UUID       *string `json:"uuid"`
 	BucketName *string `json:"bucketName"`
+	Jwt        string  `json:"jwt"`
 }
 
 type File struct {
@@ -90,14 +91,11 @@ type Image struct {
 	Name string `json:"name"`
 }
 
-type LoginUser struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-}
-
 type Project struct {
 	UUID     string    `json:"uuid"`
+	Name     string    `json:"name"`
 	Articles *Articles `json:"articles"`
+	Authur   string    `json:"authur"`
 }
 
 type Projects struct {
@@ -122,4 +120,27 @@ type UpdatedArticleInfo struct {
 	Description *string   `json:"description"`
 	UUID        *string   `json:"uuid"`
 	Tags        []TagData `json:"tags"`
+	Jwt         string    `json:"jwt"`
+}
+
+type User struct {
+	Email          string    `json:"email"`
+	HashedPassword string    `json:"hashedPassword"`
+	Role           string    `json:"role"`
+	ProfilePicture string    `json:"profilePicture"`
+	Bio            string    `json:"bio"`
+	ProfileLInk    string    `json:"profileLInk"`
+	Projects       *Projects `json:"projects"`
+}
+
+type UserCreation struct {
+	UUID     string `json:"uuid"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
+	Jwt      string `json:"jwt"`
+	Role     string `json:"role"`
+}
+
+type Jwt struct {
+	Token string `json:"token"`
 }

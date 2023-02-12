@@ -13,6 +13,7 @@ import (
 
 	"github.com/99designs/gqlgen/graphql"
 	"github.com/99designs/gqlgen/graphql/introspection"
+	"github.com/99designs/gqlgen/plugin/federation/fedruntime"
 	gqlparser "github.com/vektah/gqlparser/v2"
 	"github.com/vektah/gqlparser/v2/ast"
 	"github.com/zenith110/CMS-Backend/graph/model"
@@ -44,11 +45,6 @@ type DirectiveRoot struct {
 }
 
 type ComplexityRoot struct {
-	AccessCode struct {
-		AllowedAccess func(childComplexity int) int
-		StatusCode    func(childComplexity int) int
-	}
-
 	Article struct {
 		Author      func(childComplexity int) int
 		ContentData func(childComplexity int) int
@@ -90,14 +86,19 @@ type ComplexityRoot struct {
 
 	Mutation struct {
 		CreateArticle     func(childComplexity int, input *model.CreateArticleInfo) int
-		CreateProject     func(childComplexity int, input *model.CreateProjectInput) int
-		DeleteAllArticles func(childComplexity int) int
-		DeleteArticle     func(childComplexity int, input *model.DeleteBucketInfo) int
-		UpdateArticle     func(childComplexity int, input *model.UpdatedArticleInfo) int
+		CreateProject     func(childComplexity int, jwt string, email string, password string, role string, input *model.CreateProjectInput) int
+		CreateUser        func(childComplexity int, input *model.UserCreation) int
+		DeleteAllArticles func(childComplexity int, jwt string, email string, password string, project string) int
+		DeleteArticle     func(childComplexity int, jwt string, email string, password string, project string, input *model.DeleteBucketInfo) int
+		DeleteProject     func(childComplexity int, jwt string, email string, password string, project string, uuid string) int
+		LoginUser         func(childComplexity int, email string, password string) int
+		UpdateArticle     func(childComplexity int, jwt string, email string, password string, input *model.UpdatedArticleInfo) int
 	}
 
 	Project struct {
 		Articles func(childComplexity int) int
+		Authur   func(childComplexity int) int
+		Name     func(childComplexity int) int
 		UUID     func(childComplexity int) int
 	}
 
@@ -106,29 +107,53 @@ type ComplexityRoot struct {
 	}
 
 	Query struct {
-		Article          func(childComplexity int, title string) int
-		Articles         func(childComplexity int) int
-		GetGalleryImages func(childComplexity int) int
-		Zincarticles     func(childComplexity int, keyword string) int
+		Article            func(childComplexity int, title string, project string, jwt string) int
+		Articles           func(childComplexity int, jwt string, project string, email string, password string) int
+		GetGalleryImages   func(childComplexity int, jwt string, email string) int
+		GetProjects        func(childComplexity int, jwt string, email string, password string) int
+		Zincarticles       func(childComplexity int, keyword string, jwt string, project string) int
+		__resolve__service func(childComplexity int) int
 	}
 
 	Tag struct {
 		Language func(childComplexity int) int
 	}
+
+	User struct {
+		Bio            func(childComplexity int) int
+		Email          func(childComplexity int) int
+		HashedPassword func(childComplexity int) int
+		ProfileLInk    func(childComplexity int) int
+		ProfilePicture func(childComplexity int) int
+		Projects       func(childComplexity int) int
+		Role           func(childComplexity int) int
+	}
+
+	_Service struct {
+		SDL func(childComplexity int) int
+	}
+
+	Jwt struct {
+		Token func(childComplexity int) int
+	}
 }
 
 type MutationResolver interface {
 	CreateArticle(ctx context.Context, input *model.CreateArticleInfo) (*model.Article, error)
-	UpdateArticle(ctx context.Context, input *model.UpdatedArticleInfo) (*model.Article, error)
-	DeleteArticle(ctx context.Context, input *model.DeleteBucketInfo) (*model.Article, error)
-	DeleteAllArticles(ctx context.Context) (*model.Article, error)
-	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*model.Project, error)
+	UpdateArticle(ctx context.Context, jwt string, email string, password string, input *model.UpdatedArticleInfo) (*model.Article, error)
+	DeleteArticle(ctx context.Context, jwt string, email string, password string, project string, input *model.DeleteBucketInfo) (*model.Article, error)
+	DeleteAllArticles(ctx context.Context, jwt string, email string, password string, project string) (*model.Article, error)
+	CreateProject(ctx context.Context, jwt string, email string, password string, role string, input *model.CreateProjectInput) (*model.Project, error)
+	CreateUser(ctx context.Context, input *model.UserCreation) (*model.User, error)
+	LoginUser(ctx context.Context, email string, password string) (string, error)
+	DeleteProject(ctx context.Context, jwt string, email string, password string, project string, uuid string) (string, error)
 }
 type QueryResolver interface {
-	Article(ctx context.Context, title string) (*model.Article, error)
-	Articles(ctx context.Context) (*model.Articles, error)
-	Zincarticles(ctx context.Context, keyword string) (*model.Articles, error)
-	GetGalleryImages(ctx context.Context) (*model.GalleryImages, error)
+	Article(ctx context.Context, title string, project string, jwt string) (*model.Article, error)
+	Articles(ctx context.Context, jwt string, project string, email string, password string) (*model.Articles, error)
+	Zincarticles(ctx context.Context, keyword string, jwt string, project string) (*model.Articles, error)
+	GetGalleryImages(ctx context.Context, jwt string, email string) (*model.GalleryImages, error)
+	GetProjects(ctx context.Context, jwt string, email string, password string) (*model.Projects, error)
 }
 
 type executableSchema struct {
@@ -145,20 +170,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 	ec := executionContext{nil, e}
 	_ = ec
 	switch typeName + "." + field {
-
-	case "AccessCode.allowedAccess":
-		if e.complexity.AccessCode.AllowedAccess == nil {
-			break
-		}
-
-		return e.complexity.AccessCode.AllowedAccess(childComplexity), true
-
-	case "AccessCode.statusCode":
-		if e.complexity.AccessCode.StatusCode == nil {
-			break
-		}
-
-		return e.complexity.AccessCode.StatusCode(childComplexity), true
 
 	case "Article.author":
 		if e.complexity.Article.Author == nil {
@@ -329,14 +340,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.CreateProject(childComplexity, args["input"].(*model.CreateProjectInput)), true
+		return e.complexity.Mutation.CreateProject(childComplexity, args["jwt"].(string), args["email"].(string), args["password"].(string), args["role"].(string), args["input"].(*model.CreateProjectInput)), true
+
+	case "Mutation.createUser":
+		if e.complexity.Mutation.CreateUser == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_createUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.CreateUser(childComplexity, args["input"].(*model.UserCreation)), true
 
 	case "Mutation.deleteAllArticles":
 		if e.complexity.Mutation.DeleteAllArticles == nil {
 			break
 		}
 
-		return e.complexity.Mutation.DeleteAllArticles(childComplexity), true
+		args, err := ec.field_Mutation_deleteAllArticles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteAllArticles(childComplexity, args["jwt"].(string), args["email"].(string), args["password"].(string), args["project"].(string)), true
 
 	case "Mutation.deleteArticle":
 		if e.complexity.Mutation.DeleteArticle == nil {
@@ -348,7 +376,31 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteArticle(childComplexity, args["input"].(*model.DeleteBucketInfo)), true
+		return e.complexity.Mutation.DeleteArticle(childComplexity, args["jwt"].(string), args["email"].(string), args["password"].(string), args["project"].(string), args["input"].(*model.DeleteBucketInfo)), true
+
+	case "Mutation.deleteProject":
+		if e.complexity.Mutation.DeleteProject == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_deleteProject_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.DeleteProject(childComplexity, args["jwt"].(string), args["email"].(string), args["password"].(string), args["project"].(string), args["uuid"].(string)), true
+
+	case "Mutation.loginUser":
+		if e.complexity.Mutation.LoginUser == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_loginUser_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.LoginUser(childComplexity, args["email"].(string), args["password"].(string)), true
 
 	case "Mutation.updateArticle":
 		if e.complexity.Mutation.UpdateArticle == nil {
@@ -360,7 +412,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.UpdateArticle(childComplexity, args["input"].(*model.UpdatedArticleInfo)), true
+		return e.complexity.Mutation.UpdateArticle(childComplexity, args["jwt"].(string), args["email"].(string), args["password"].(string), args["input"].(*model.UpdatedArticleInfo)), true
 
 	case "Project.articles":
 		if e.complexity.Project.Articles == nil {
@@ -368,6 +420,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Project.Articles(childComplexity), true
+
+	case "Project.authur":
+		if e.complexity.Project.Authur == nil {
+			break
+		}
+
+		return e.complexity.Project.Authur(childComplexity), true
+
+	case "Project.name":
+		if e.complexity.Project.Name == nil {
+			break
+		}
+
+		return e.complexity.Project.Name(childComplexity), true
 
 	case "Project.uuid":
 		if e.complexity.Project.UUID == nil {
@@ -393,21 +459,43 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Article(childComplexity, args["title"].(string)), true
+		return e.complexity.Query.Article(childComplexity, args["title"].(string), args["project"].(string), args["jwt"].(string)), true
 
 	case "Query.articles":
 		if e.complexity.Query.Articles == nil {
 			break
 		}
 
-		return e.complexity.Query.Articles(childComplexity), true
+		args, err := ec.field_Query_articles_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.Articles(childComplexity, args["jwt"].(string), args["project"].(string), args["email"].(string), args["password"].(string)), true
 
 	case "Query.getGalleryImages":
 		if e.complexity.Query.GetGalleryImages == nil {
 			break
 		}
 
-		return e.complexity.Query.GetGalleryImages(childComplexity), true
+		args, err := ec.field_Query_getGalleryImages_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetGalleryImages(childComplexity, args["jwt"].(string), args["email"].(string)), true
+
+	case "Query.getProjects":
+		if e.complexity.Query.GetProjects == nil {
+			break
+		}
+
+		args, err := ec.field_Query_getProjects_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Query.GetProjects(childComplexity, args["jwt"].(string), args["email"].(string), args["password"].(string)), true
 
 	case "Query.zincarticles":
 		if e.complexity.Query.Zincarticles == nil {
@@ -419,7 +507,14 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.Zincarticles(childComplexity, args["keyword"].(string)), true
+		return e.complexity.Query.Zincarticles(childComplexity, args["keyword"].(string), args["jwt"].(string), args["project"].(string)), true
+
+	case "Query._service":
+		if e.complexity.Query.__resolve__service == nil {
+			break
+		}
+
+		return e.complexity.Query.__resolve__service(childComplexity), true
 
 	case "Tag.language":
 		if e.complexity.Tag.Language == nil {
@@ -427,6 +522,69 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Tag.Language(childComplexity), true
+
+	case "User.bio":
+		if e.complexity.User.Bio == nil {
+			break
+		}
+
+		return e.complexity.User.Bio(childComplexity), true
+
+	case "User.email":
+		if e.complexity.User.Email == nil {
+			break
+		}
+
+		return e.complexity.User.Email(childComplexity), true
+
+	case "User.hashedPassword":
+		if e.complexity.User.HashedPassword == nil {
+			break
+		}
+
+		return e.complexity.User.HashedPassword(childComplexity), true
+
+	case "User.profileLInk":
+		if e.complexity.User.ProfileLInk == nil {
+			break
+		}
+
+		return e.complexity.User.ProfileLInk(childComplexity), true
+
+	case "User.profilePicture":
+		if e.complexity.User.ProfilePicture == nil {
+			break
+		}
+
+		return e.complexity.User.ProfilePicture(childComplexity), true
+
+	case "User.projects":
+		if e.complexity.User.Projects == nil {
+			break
+		}
+
+		return e.complexity.User.Projects(childComplexity), true
+
+	case "User.role":
+		if e.complexity.User.Role == nil {
+			break
+		}
+
+		return e.complexity.User.Role(childComplexity), true
+
+	case "_Service.sdl":
+		if e.complexity._Service.SDL == nil {
+			break
+		}
+
+		return e.complexity._Service.SDL(childComplexity), true
+
+	case "jwt.token":
+		if e.complexity.Jwt.Token == nil {
+			break
+		}
+
+		return e.complexity.Jwt.Token(childComplexity), true
 
 	}
 	return 0, false
@@ -442,9 +600,9 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputCreateProjectInput,
 		ec.unmarshalInputDeleteBucketInfo,
 		ec.unmarshalInputFile,
-		ec.unmarshalInputLoginUser,
 		ec.unmarshalInputTagData,
 		ec.unmarshalInputUpdatedArticleInfo,
+		ec.unmarshalInputUserCreation,
 	)
 	first := true
 
@@ -517,6 +675,26 @@ func sourceData(filename string) string {
 
 var sources = []*ast.Source{
 	{Name: "schema.graphqls", Input: sourceData("schema.graphqls"), BuiltIn: false},
+	{Name: "../federation/directives.graphql", Input: `
+	scalar _Any
+	scalar _FieldSet
+
+	directive @external on FIELD_DEFINITION
+	directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
+	directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
+	directive @extends on OBJECT | INTERFACE
+
+	directive @key(fields: _FieldSet!) repeatable on OBJECT | INTERFACE
+`, BuiltIn: true},
+	{Name: "../federation/entity.graphql", Input: `
+type _Service {
+  sdl: String
+}
+
+extend type Query {
+  _service: _Service!
+}
+`, BuiltIn: true},
 }
 var parsedSchema = gqlparser.MustLoadSchema(sources...)
 
@@ -542,45 +720,276 @@ func (ec *executionContext) field_Mutation_createArticle_args(ctx context.Contex
 func (ec *executionContext) field_Mutation_createProject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.CreateProjectInput
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["role"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["role"] = arg3
+	var arg4 *model.CreateProjectInput
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOCreateProjectInput2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐCreateProjectInput(ctx, tmp)
+		arg4, err = ec.unmarshalOCreateProjectInput2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐCreateProjectInput(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UserCreation
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUserCreation2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUserCreation(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
 	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteAllArticles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["project"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["project"] = arg3
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_deleteArticle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.DeleteBucketInfo
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalODeleteBucketInfo2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐDeleteBucketInfo(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["project"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["project"] = arg3
+	var arg4 *model.DeleteBucketInfo
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg4, err = ec.unmarshalODeleteBucketInfo2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐDeleteBucketInfo(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_deleteProject_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["project"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["project"] = arg3
+	var arg4 string
+	if tmp, ok := rawArgs["uuid"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
+		arg4, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["uuid"] = arg4
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_loginUser_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg1
 	return args, nil
 }
 
 func (ec *executionContext) field_Mutation_updateArticle_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 *model.UpdatedArticleInfo
-	if tmp, ok := rawArgs["input"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
-		arg0, err = ec.unmarshalOUpdatedArticleInfo2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUpdatedArticleInfo(ctx, tmp)
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["input"] = arg0
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg2
+	var arg3 *model.UpdatedArticleInfo
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg3, err = ec.unmarshalOUpdatedArticleInfo2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUpdatedArticleInfo(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg3
 	return args, nil
 }
 
@@ -611,6 +1020,123 @@ func (ec *executionContext) field_Query_article_args(ctx context.Context, rawArg
 		}
 	}
 	args["title"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["project"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["project"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg2
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_articles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["project"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["project"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg2
+	var arg3 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg3, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg3
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getGalleryImages_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
+	return args, nil
+}
+
+func (ec *executionContext) field_Query_getProjects_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["email"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["email"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["password"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["password"] = arg2
 	return args, nil
 }
 
@@ -626,6 +1152,24 @@ func (ec *executionContext) field_Query_zincarticles_args(ctx context.Context, r
 		}
 	}
 	args["keyword"] = arg0
+	var arg1 string
+	if tmp, ok := rawArgs["jwt"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+		arg1, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["jwt"] = arg1
+	var arg2 string
+	if tmp, ok := rawArgs["project"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+		arg2, err = ec.unmarshalNString2string(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["project"] = arg2
 	return args, nil
 }
 
@@ -666,94 +1210,6 @@ func (ec *executionContext) field___Type_fields_args(ctx context.Context, rawArg
 // endregion ************************** directives.gotpl **************************
 
 // region    **************************** field.gotpl *****************************
-
-func (ec *executionContext) _AccessCode_statusCode(ctx context.Context, field graphql.CollectedField, obj *model.AccessCode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AccessCode_statusCode(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.StatusCode, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(string)
-	fc.Result = res
-	return ec.marshalNID2string(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AccessCode_statusCode(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccessCode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type ID does not have child fields")
-		},
-	}
-	return fc, nil
-}
-
-func (ec *executionContext) _AccessCode_allowedAccess(ctx context.Context, field graphql.CollectedField, obj *model.AccessCode) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_AccessCode_allowedAccess(ctx, field)
-	if err != nil {
-		return graphql.Null
-	}
-	ctx = graphql.WithFieldContext(ctx, fc)
-	defer func() {
-		if r := recover(); r != nil {
-			ec.Error(ctx, ec.Recover(ctx, r))
-			ret = graphql.Null
-		}
-	}()
-	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
-		ctx = rctx // use context from middleware stack in children
-		return obj.AllowedAccess, nil
-	})
-	if err != nil {
-		ec.Error(ctx, err)
-		return graphql.Null
-	}
-	if resTmp == nil {
-		if !graphql.HasFieldError(ctx, fc) {
-			ec.Errorf(ctx, "must not be null")
-		}
-		return graphql.Null
-	}
-	res := resTmp.(bool)
-	fc.Result = res
-	return ec.marshalNBoolean2bool(ctx, field.Selections, res)
-}
-
-func (ec *executionContext) fieldContext_AccessCode_allowedAccess(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
-	fc = &graphql.FieldContext{
-		Object:     "AccessCode",
-		Field:      field,
-		IsMethod:   false,
-		IsResolver: false,
-		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			return nil, errors.New("field of type Boolean does not have child fields")
-		},
-	}
-	return fc, nil
-}
 
 func (ec *executionContext) _Article_title(ctx context.Context, field graphql.CollectedField, obj *model.Article) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Article_title(ctx, field)
@@ -1809,7 +2265,7 @@ func (ec *executionContext) _Mutation_updateArticle(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().UpdateArticle(rctx, fc.Args["input"].(*model.UpdatedArticleInfo))
+		return ec.resolvers.Mutation().UpdateArticle(rctx, fc.Args["jwt"].(string), fc.Args["email"].(string), fc.Args["password"].(string), fc.Args["input"].(*model.UpdatedArticleInfo))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1883,7 +2339,7 @@ func (ec *executionContext) _Mutation_deleteArticle(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteArticle(rctx, fc.Args["input"].(*model.DeleteBucketInfo))
+		return ec.resolvers.Mutation().DeleteArticle(rctx, fc.Args["jwt"].(string), fc.Args["email"].(string), fc.Args["password"].(string), fc.Args["project"].(string), fc.Args["input"].(*model.DeleteBucketInfo))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -1957,7 +2413,7 @@ func (ec *executionContext) _Mutation_deleteAllArticles(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteAllArticles(rctx)
+		return ec.resolvers.Mutation().DeleteAllArticles(rctx, fc.Args["jwt"].(string), fc.Args["email"].(string), fc.Args["password"].(string), fc.Args["project"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2003,6 +2459,17 @@ func (ec *executionContext) fieldContext_Mutation_deleteAllArticles(ctx context.
 			return nil, fmt.Errorf("no field named %q was found under type Article", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteAllArticles_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
 	return fc, nil
 }
 
@@ -2020,7 +2487,7 @@ func (ec *executionContext) _Mutation_createProject(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().CreateProject(rctx, fc.Args["input"].(*model.CreateProjectInput))
+		return ec.resolvers.Mutation().CreateProject(rctx, fc.Args["jwt"].(string), fc.Args["email"].(string), fc.Args["password"].(string), fc.Args["role"].(string), fc.Args["input"].(*model.CreateProjectInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2046,8 +2513,12 @@ func (ec *executionContext) fieldContext_Mutation_createProject(ctx context.Cont
 			switch field.Name {
 			case "uuid":
 				return ec.fieldContext_Project_uuid(ctx, field)
+			case "name":
+				return ec.fieldContext_Project_name(ctx, field)
 			case "articles":
 				return ec.fieldContext_Project_articles(ctx, field)
+			case "authur":
+				return ec.fieldContext_Project_authur(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Project", field.Name)
 		},
@@ -2060,6 +2531,181 @@ func (ec *executionContext) fieldContext_Mutation_createProject(ctx context.Cont
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_createProject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_createUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_createUser(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().CreateUser(rctx, fc.Args["input"].(*model.UserCreation))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.User)
+	fc.Result = res
+	return ec.marshalOUser2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUser(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_createUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "email":
+				return ec.fieldContext_User_email(ctx, field)
+			case "hashedPassword":
+				return ec.fieldContext_User_hashedPassword(ctx, field)
+			case "role":
+				return ec.fieldContext_User_role(ctx, field)
+			case "profilePicture":
+				return ec.fieldContext_User_profilePicture(ctx, field)
+			case "bio":
+				return ec.fieldContext_User_bio(ctx, field)
+			case "profileLInk":
+				return ec.fieldContext_User_profileLInk(ctx, field)
+			case "projects":
+				return ec.fieldContext_User_projects(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type User", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_createUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_loginUser(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_loginUser(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().LoginUser(rctx, fc.Args["email"].(string), fc.Args["password"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_loginUser(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_loginUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_deleteProject(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_deleteProject(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().DeleteProject(rctx, fc.Args["jwt"].(string), fc.Args["email"].(string), fc.Args["password"].(string), fc.Args["project"].(string), fc.Args["uuid"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_deleteProject(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_deleteProject_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -2098,6 +2744,50 @@ func (ec *executionContext) _Project_uuid(ctx context.Context, field graphql.Col
 }
 
 func (ec *executionContext) fieldContext_Project_uuid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Project_name(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Project_name(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Name, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Project_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Project",
 		Field:      field,
@@ -2160,6 +2850,50 @@ func (ec *executionContext) fieldContext_Project_articles(ctx context.Context, f
 	return fc, nil
 }
 
+func (ec *executionContext) _Project_authur(ctx context.Context, field graphql.CollectedField, obj *model.Project) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Project_authur(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Authur, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Project_authur(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Project",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 func (ec *executionContext) _Projects_projects(ctx context.Context, field graphql.CollectedField, obj *model.Projects) (ret graphql.Marshaler) {
 	fc, err := ec.fieldContext_Projects_projects(ctx, field)
 	if err != nil {
@@ -2201,8 +2935,12 @@ func (ec *executionContext) fieldContext_Projects_projects(ctx context.Context, 
 			switch field.Name {
 			case "uuid":
 				return ec.fieldContext_Project_uuid(ctx, field)
+			case "name":
+				return ec.fieldContext_Project_name(ctx, field)
 			case "articles":
 				return ec.fieldContext_Project_articles(ctx, field)
+			case "authur":
+				return ec.fieldContext_Project_authur(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Project", field.Name)
 		},
@@ -2224,7 +2962,7 @@ func (ec *executionContext) _Query_article(ctx context.Context, field graphql.Co
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Article(rctx, fc.Args["title"].(string))
+		return ec.resolvers.Query().Article(rctx, fc.Args["title"].(string), fc.Args["project"].(string), fc.Args["jwt"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2295,7 +3033,7 @@ func (ec *executionContext) _Query_articles(ctx context.Context, field graphql.C
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Articles(rctx)
+		return ec.resolvers.Query().Articles(rctx, fc.Args["jwt"].(string), fc.Args["project"].(string), fc.Args["email"].(string), fc.Args["password"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2324,6 +3062,17 @@ func (ec *executionContext) fieldContext_Query_articles(ctx context.Context, fie
 			return nil, fmt.Errorf("no field named %q was found under type Articles", field.Name)
 		},
 	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_articles_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
 	return fc, nil
 }
 
@@ -2341,7 +3090,7 @@ func (ec *executionContext) _Query_zincarticles(ctx context.Context, field graph
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().Zincarticles(rctx, fc.Args["keyword"].(string))
+		return ec.resolvers.Query().Zincarticles(rctx, fc.Args["keyword"].(string), fc.Args["jwt"].(string), fc.Args["project"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2398,7 +3147,7 @@ func (ec *executionContext) _Query_getGalleryImages(ctx context.Context, field g
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().GetGalleryImages(rctx)
+		return ec.resolvers.Query().GetGalleryImages(rctx, fc.Args["jwt"].(string), fc.Args["email"].(string))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2425,6 +3174,119 @@ func (ec *executionContext) fieldContext_Query_getGalleryImages(ctx context.Cont
 				return ec.fieldContext_GalleryImages_total(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type GalleryImages", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getGalleryImages_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query_getProjects(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query_getProjects(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Query().GetProjects(rctx, fc.Args["jwt"].(string), fc.Args["email"].(string), fc.Args["password"].(string))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(*model.Projects)
+	fc.Result = res
+	return ec.marshalOProjects2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐProjects(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query_getProjects(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "projects":
+				return ec.fieldContext_Projects_projects(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Projects", field.Name)
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Query_getProjects_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Query__service(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Query__service(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.__resolve__service(ctx)
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(fedruntime.Service)
+	fc.Result = res
+	return ec.marshalN_Service2githubᚗcomᚋ99designsᚋgqlgenᚋpluginᚋfederationᚋfedruntimeᚐService(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Query__service(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Query",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "sdl":
+				return ec.fieldContext__Service_sdl(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type _Service", field.Name)
 		},
 	}
 	return fc, nil
@@ -2591,6 +3453,359 @@ func (ec *executionContext) _Tag_language(ctx context.Context, field graphql.Col
 func (ec *executionContext) fieldContext_Tag_language(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Tag",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_email(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_email(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Email, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_email(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_hashedPassword(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_hashedPassword(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.HashedPassword, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_hashedPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_role(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_role(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Role, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_role(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_profilePicture(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_profilePicture(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfilePicture, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_profilePicture(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_bio(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_bio(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Bio, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_bio(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_profileLInk(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_profileLInk(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ProfileLInk, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_profileLInk(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _User_projects(ctx context.Context, field graphql.CollectedField, obj *model.User) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_User_projects(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Projects, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(*model.Projects)
+	fc.Result = res
+	return ec.marshalNProjects2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐProjects(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_User_projects(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "User",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			switch field.Name {
+			case "projects":
+				return ec.fieldContext_Projects_projects(ctx, field)
+			}
+			return nil, fmt.Errorf("no field named %q was found under type Projects", field.Name)
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) __Service_sdl(ctx context.Context, field graphql.CollectedField, obj *fedruntime.Service) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext__Service_sdl(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.SDL, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalOString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext__Service_sdl(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "_Service",
 		Field:      field,
 		IsMethod:   false,
 		IsResolver: false,
@@ -4370,6 +5585,50 @@ func (ec *executionContext) fieldContext___Type_specifiedByURL(ctx context.Conte
 	return fc, nil
 }
 
+func (ec *executionContext) _jwt_token(ctx context.Context, field graphql.CollectedField, obj *model.Jwt) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_jwt_token(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Token, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_jwt_token(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "jwt",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
 // endregion **************************** field.gotpl *****************************
 
 // region    **************************** input.gotpl *****************************
@@ -4453,7 +5712,7 @@ func (ec *executionContext) unmarshalInputCreateArticleInfo(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags"}
+	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt", "project", "email"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4532,6 +5791,30 @@ func (ec *executionContext) unmarshalInputCreateArticleInfo(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
+		case "jwt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "project":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
+			it.Project, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4545,7 +5828,7 @@ func (ec *executionContext) unmarshalInputCreateProjectInput(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"uuid", "name"}
+	fieldsInOrder := [...]string{"uuid", "name", "jwt", "author"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4568,6 +5851,22 @@ func (ec *executionContext) unmarshalInputCreateProjectInput(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "jwt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "author":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("author"))
+			it.Author, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4581,7 +5880,7 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"uuid", "bucketName"}
+	fieldsInOrder := [...]string{"uuid", "bucketName", "jwt"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4601,6 +5900,14 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bucketName"))
 			it.BucketName, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "jwt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -4670,42 +5977,6 @@ func (ec *executionContext) unmarshalInputFile(ctx context.Context, obj interfac
 	return it, nil
 }
 
-func (ec *executionContext) unmarshalInputLoginUser(ctx context.Context, obj interface{}) (model.LoginUser, error) {
-	var it model.LoginUser
-	asMap := map[string]interface{}{}
-	for k, v := range obj.(map[string]interface{}) {
-		asMap[k] = v
-	}
-
-	fieldsInOrder := [...]string{"username", "password"}
-	for _, k := range fieldsInOrder {
-		v, ok := asMap[k]
-		if !ok {
-			continue
-		}
-		switch k {
-		case "username":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "password":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		}
-	}
-
-	return it, nil
-}
-
 func (ec *executionContext) unmarshalInputTagData(ctx context.Context, obj interface{}) (model.TagData, error) {
 	var it model.TagData
 	asMap := map[string]interface{}{}
@@ -4741,7 +6012,7 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags"}
+	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -4820,6 +6091,74 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 			if err != nil {
 				return it, err
 			}
+		case "jwt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUserCreation(ctx context.Context, obj interface{}) (model.UserCreation, error) {
+	var it model.UserCreation
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"uuid", "email", "password", "jwt", "role"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "uuid":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
+			it.UUID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "email":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
+			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "jwt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "role":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
+			it.Role, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
 		}
 	}
 
@@ -4833,41 +6172,6 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 // endregion ************************** interface.gotpl ***************************
 
 // region    **************************** object.gotpl ****************************
-
-var accessCodeImplementors = []string{"AccessCode"}
-
-func (ec *executionContext) _AccessCode(ctx context.Context, sel ast.SelectionSet, obj *model.AccessCode) graphql.Marshaler {
-	fields := graphql.CollectFields(ec.OperationContext, sel, accessCodeImplementors)
-	out := graphql.NewFieldSet(fields)
-	var invalids uint32
-	for i, field := range fields {
-		switch field.Name {
-		case "__typename":
-			out.Values[i] = graphql.MarshalString("AccessCode")
-		case "statusCode":
-
-			out.Values[i] = ec._AccessCode_statusCode(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		case "allowedAccess":
-
-			out.Values[i] = ec._AccessCode_allowedAccess(ctx, field, obj)
-
-			if out.Values[i] == graphql.Null {
-				invalids++
-			}
-		default:
-			panic("unknown field " + strconv.Quote(field.Name))
-		}
-	}
-	out.Dispatch()
-	if invalids > 0 {
-		return graphql.Null
-	}
-	return out
-}
 
 var articleImplementors = []string{"Article"}
 
@@ -5190,6 +6494,24 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 				return ec._Mutation_createProject(ctx, field)
 			})
 
+		case "createUser":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_createUser(ctx, field)
+			})
+
+		case "loginUser":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_loginUser(ctx, field)
+			})
+
+		case "deleteProject":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_deleteProject(ctx, field)
+			})
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5215,9 +6537,23 @@ func (ec *executionContext) _Project(ctx context.Context, sel ast.SelectionSet, 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		case "name":
+
+			out.Values[i] = ec._Project_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
 		case "articles":
 
 			out.Values[i] = ec._Project_articles(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "authur":
+
+			out.Values[i] = ec._Project_authur(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -5359,6 +6695,46 @@ func (ec *executionContext) _Query(ctx context.Context, sel ast.SelectionSet) gr
 			out.Concurrently(i, func() graphql.Marshaler {
 				return rrm(innerCtx)
 			})
+		case "getProjects":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query_getProjects(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
+		case "_service":
+			field := field
+
+			innerFunc := func(ctx context.Context) (res graphql.Marshaler) {
+				defer func() {
+					if r := recover(); r != nil {
+						ec.Error(ctx, ec.Recover(ctx, r))
+					}
+				}()
+				res = ec._Query__service(ctx, field)
+				return res
+			}
+
+			rrm := func(ctx context.Context) graphql.Marshaler {
+				return ec.OperationContext.RootResolverMiddleware(ctx, innerFunc)
+			}
+
+			out.Concurrently(i, func() graphql.Marshaler {
+				return rrm(innerCtx)
+			})
 		case "__type":
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
@@ -5396,6 +6772,101 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var userImplementors = []string{"User"}
+
+func (ec *executionContext) _User(ctx context.Context, sel ast.SelectionSet, obj *model.User) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, userImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("User")
+		case "email":
+
+			out.Values[i] = ec._User_email(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "hashedPassword":
+
+			out.Values[i] = ec._User_hashedPassword(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "role":
+
+			out.Values[i] = ec._User_role(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "profilePicture":
+
+			out.Values[i] = ec._User_profilePicture(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "bio":
+
+			out.Values[i] = ec._User_bio(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "profileLInk":
+
+			out.Values[i] = ec._User_profileLInk(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "projects":
+
+			out.Values[i] = ec._User_projects(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var _ServiceImplementors = []string{"_Service"}
+
+func (ec *executionContext) __Service(ctx context.Context, sel ast.SelectionSet, obj *fedruntime.Service) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, _ServiceImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("_Service")
+		case "sdl":
+
+			out.Values[i] = ec.__Service_sdl(ctx, field, obj)
+
 		default:
 			panic("unknown field " + strconv.Quote(field.Name))
 		}
@@ -5721,6 +7192,34 @@ func (ec *executionContext) ___Type(ctx context.Context, sel ast.SelectionSet, o
 	return out
 }
 
+var jwtImplementors = []string{"jwt"}
+
+func (ec *executionContext) _jwt(ctx context.Context, sel ast.SelectionSet, obj *model.Jwt) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, jwtImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("jwt")
+		case "token":
+
+			out.Values[i] = ec._jwt_token(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
 // endregion **************************** object.gotpl ****************************
 
 // region    ***************************** type.gotpl *****************************
@@ -5810,21 +7309,6 @@ func (ec *executionContext) unmarshalNBoolean2bool(ctx context.Context, v interf
 
 func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.SelectionSet, v bool) graphql.Marshaler {
 	res := graphql.MarshalBoolean(v)
-	if res == graphql.Null {
-		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
-			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
-		}
-	}
-	return res
-}
-
-func (ec *executionContext) unmarshalNID2string(ctx context.Context, v interface{}) (string, error) {
-	res, err := graphql.UnmarshalID(v)
-	return res, graphql.ErrorOnPath(ctx, err)
-}
-
-func (ec *executionContext) marshalNID2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
-	res := graphql.MarshalID(v)
 	if res == graphql.Null {
 		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
 			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
@@ -5954,6 +7438,16 @@ func (ec *executionContext) marshalNProject2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑ
 	return ec._Project(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalNProjects2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐProjects(ctx context.Context, sel ast.SelectionSet, v *model.Projects) graphql.Marshaler {
+	if v == nil {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+		return graphql.Null
+	}
+	return ec._Projects(ctx, sel, v)
+}
+
 func (ec *executionContext) unmarshalNString2string(ctx context.Context, v interface{}) (string, error) {
 	res, err := graphql.UnmarshalString(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -6020,6 +7514,25 @@ func (ec *executionContext) marshalNTag2ᚕgithubᚗcomᚋzenith110ᚋCMSᚑBack
 func (ec *executionContext) unmarshalNTagData2githubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐTagData(ctx context.Context, v interface{}) (model.TagData, error) {
 	res, err := ec.unmarshalInputTagData(ctx, v)
 	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalN_FieldSet2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalN_FieldSet2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	if res == graphql.Null {
+		if !graphql.HasFieldError(ctx, graphql.GetFieldContext(ctx)) {
+			ec.Errorf(ctx, "the requested element is null which the schema does not allow")
+		}
+	}
+	return res
+}
+
+func (ec *executionContext) marshalN_Service2githubᚗcomᚋ99designsᚋgqlgenᚋpluginᚋfederationᚋfedruntimeᚐService(ctx context.Context, sel ast.SelectionSet, v fedruntime.Service) graphql.Marshaler {
+	return ec.__Service(ctx, sel, &v)
 }
 
 func (ec *executionContext) marshalN__Directive2githubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐDirective(ctx context.Context, sel ast.SelectionSet, v introspection.Directive) graphql.Marshaler {
@@ -6354,6 +7867,23 @@ func (ec *executionContext) marshalOGalleryImages2ᚖgithubᚗcomᚋzenith110ᚋ
 	return ec._GalleryImages(ctx, sel, v)
 }
 
+func (ec *executionContext) marshalOProjects2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐProjects(ctx context.Context, sel ast.SelectionSet, v *model.Projects) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._Projects(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOString2string(ctx context.Context, v interface{}) (string, error) {
+	res, err := graphql.UnmarshalString(v)
+	return res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) marshalOString2string(ctx context.Context, sel ast.SelectionSet, v string) graphql.Marshaler {
+	res := graphql.MarshalString(v)
+	return res
+}
+
 func (ec *executionContext) unmarshalOString2ᚖstring(ctx context.Context, v interface{}) (*string, error) {
 	if v == nil {
 		return nil, nil
@@ -6412,6 +7942,21 @@ func (ec *executionContext) marshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 	}
 	res := graphql.MarshalUpload(*v)
 	return res
+}
+
+func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {
+	if v == nil {
+		return graphql.Null
+	}
+	return ec._User(ctx, sel, v)
+}
+
+func (ec *executionContext) unmarshalOUserCreation2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUserCreation(ctx context.Context, v interface{}) (*model.UserCreation, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUserCreation(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalO__EnumValue2ᚕgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚋintrospectionᚐEnumValueᚄ(ctx context.Context, sel ast.SelectionSet, v []introspection.EnumValue) graphql.Marshaler {

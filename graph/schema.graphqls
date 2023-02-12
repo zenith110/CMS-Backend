@@ -4,27 +4,54 @@ schema {
   mutation: Mutation
 }
 type Query {
-  article(title: String!): Article
-  articles: Articles
-  zincarticles(keyword: String!): Articles
-  getGalleryImages: GalleryImages
+  article(title: String!, project: String!, jwt: String!): Article
+  articles(jwt: String!, project: String!, email: String!, password: String!): Articles
+  zincarticles(keyword: String!, jwt: String!, project: String!): Articles
+  getGalleryImages(jwt: String!, email: String!): GalleryImages
+  getProjects(jwt: String!, email: String!, password: String!): Projects
 }
 type Mutation {
   createArticle(
     input: CreateArticleInfo
   ): Article!
-  updateArticle(input: UpdatedArticleInfo): Article!
-  deleteArticle(input: DeleteBucketInfo): Article!
-  deleteAllArticles: Article!
-  createProject(input: CreateProjectInput): Project!
+  updateArticle(jwt: String!, email: String!, password: String!, input: UpdatedArticleInfo): Article!
+  deleteArticle(jwt: String!, email: String!, password: String!, project: String!, input: DeleteBucketInfo): Article!
+  deleteAllArticles(jwt: String!, email: String!, password: String!, project: String!): Article!
+  createProject(jwt: String!, email: String!, password: String!, role: String!, input: CreateProjectInput): Project!
+  createUser(input: UserCreation): User
+  loginUser(email: String!, password: String!): String!
+  deleteProject(jwt: String!, email: String!, password: String!, project: String!, uuid: String!): String!
+
+}
+input UserCreation{
+  uuid: String!
+  email: String!
+  password: String!
+  jwt: String!
+  role: String!
+}
+type User{
+  email: String!
+  hashedPassword: String!
+  role: String!
+  profilePicture: String!
+  bio: String!
+  profileLInk: String!
+  projects: Projects!
 }
 input CreateProjectInput{
   uuid: String!
   name: String!
+  jwt: String!
+  author: String!
+}
+type jwt{
+  token: String!
 }
 input DeleteBucketInfo{
   uuid: String
   bucketName: String
+  jwt: String!
 }
 input CreateArticleInfo{
     title: String
@@ -36,6 +63,9 @@ input CreateArticleInfo{
     description: String
     uuid: String
     tags: [TagData!]
+    jwt: String!
+    project: String!
+    email: String!
 }
 input File{
   name: String
@@ -58,11 +88,9 @@ input UpdatedArticleInfo{
     description: String
     uuid: String
     tags: [TagData!]
+    jwt: String!
 }
-type AccessCode {
-  statusCode: ID!
-  allowedAccess: Boolean!
-}
+
 type Image {
   uuid: String!
   url: String!
@@ -70,10 +98,7 @@ type Image {
   name: String!
 }
 
-input LoginUser {
-  username: String!
-  password: String!
-}
+
 input AuthorInput {
   name: String!
   profile: String!
@@ -114,7 +139,9 @@ type Tag {
 }
 type Project{
   uuid: String!
+  name: String!
   articles: Articles!
+  authur: String!
 }
 type Projects{
   projects: [Project!]!

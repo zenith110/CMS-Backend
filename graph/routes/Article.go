@@ -16,6 +16,10 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	/*
 		Creates a temporary array for the article model, loop through the contents of the input for all the tag data
 	*/
+	message, _ := JWTValidityCheck(input.Jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
@@ -27,7 +31,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	}
 	imageURL := UploadFileToS3(input)
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("articles")
+	collection := client.Database(input.Project).Collection("articles")
 	author := model.Author{Name: *input.Author, Profile: "", Picture: ""}
 	article := model.Article{Title: *input.Title, Author: &author, ContentData: *input.ContentData, DateWritten: *input.DateWritten, URL: *input.URL, Description: *input.Description, UUID: *input.UUID, Tags: tags, TitleCard: imageURL}
 	res, err := collection.InsertOne(context.TODO(), article)
@@ -47,8 +51,9 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"Description": "%s",
 		"UUID":        "%s",
 		"TitleCard":   "%s",
-		"Tags":        "%s"
-	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
+		"Tags":        "%s",
+		"Project": 	   "%s",
+	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.Project)
 
 	log.WithFields(log.Fields{
 		"article state": "created mongodb instance",
@@ -61,6 +66,10 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	return &article, err
 }
 func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
+	message, _ := JWTValidityCheck(bucket.Jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	client := ConnectToMongo()
 	collection := client.Database("blog").Collection("articles")
 	article := model.Article{UUID: *bucket.UUID}
@@ -75,19 +84,27 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 	DeleteDocument("articles", zincData, *bucket.UUID)
 	return &article, deleteError
 }
-func FindArticle(title *string) (*model.Article, error) {
+func FindArticle(title string, jwt string, project string) (*model.Article, error) {
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("articles")
+	collection := client.Database(project).Collection("articles")
 	var article model.Article
 
 	//Passing the bson.D{{}} as the filter matches documents in the collection
-	err := collection.FindOne(context.TODO(), bson.M{"url": *title}).Decode(&article)
+	err := collection.FindOne(context.TODO(), bson.M{"url": title}).Decode(&article)
 	if err != nil {
 		log.Fatal(err)
 	}
 	return &article, err
 }
 func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
