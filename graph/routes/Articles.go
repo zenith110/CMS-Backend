@@ -88,16 +88,12 @@ func FetchArticles(jwt string, email string, password string, project string) (*
 
 	return &articles, err
 }
-func FetchArticlesZinc(keyword string, jwt string, project string) (*model.Articles, error) {
-	message, _ := JWTValidityCheck(jwt)
-	if message == "Unauthorized!" {
-		panic("Unauthorized!")
-	}
+func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error) {
 	var err error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	var zinc Zinc
-	data := SearchDocuments(fmt.Sprintf("%s/articles", project), keyword)
+	data := SearchDocuments(fmt.Sprintf("%s-%s-articles", input.Username, input.Project), input.Keyword, input.Username, input.Password)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))

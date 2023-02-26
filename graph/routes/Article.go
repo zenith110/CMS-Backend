@@ -31,8 +31,8 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	}
 	imageURL := UploadFileToS3(input)
 	client := ConnectToMongo()
-	collection := client.Database(input.Project).Collection("articles")
-	author := model.Author{Name: *input.Author, Profile: "", Picture: ""}
+	collection := client.Database(fmt.Sprintf("%s/%s", input.Username, input.Project)).Collection("articles")
+	author := model.Author{Name: input.Username}
 	article := model.Article{Title: *input.Title, Author: &author, ContentData: *input.ContentData, DateWritten: *input.DateWritten, URL: *input.URL, Description: *input.Description, UUID: *input.UUID, Tags: tags, TitleCard: imageURL}
 	res, err := collection.InsertOne(context.TODO(), article)
 	if err != nil {
@@ -44,7 +44,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 
 	zincData := fmt.Sprintf(`{
 		"Title":       "%s",
-		"Author":      "%s",
+		"Username":      "%s",
 		"ContentData": "%s",
 		"DateWritten": "%s",
 		"Url":         "%s",
@@ -53,13 +53,13 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"TitleCard":   "%s",
 		"Tags":        "%s",
 		"Project": 	   "%s",
-	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.Project)
+	}`, *input.Title, *&input.Username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.Project)
 
 	log.WithFields(log.Fields{
 		"article state": "created mongodb instance",
 	}).Info("Article has been created, inserting into zinc!")
 
-	CreateDocument("articles", zincData, *input.UUID)
+	CreateDocument(fmt.Sprintf("%s-%s-articles", input.Username, input.Project), zincData, *input.UUID, input.Username, input.Password)
 	log.WithFields(log.Fields{
 		"article state": "finished insertion",
 	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
@@ -71,7 +71,7 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s/%s", bucket.Username, bucket.Project)).Collection("articles")
 	article := model.Article{UUID: *bucket.UUID}
 	DeleteArticleBucket(*bucket.BucketName)
 	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": *bucket.UUID})
@@ -81,20 +81,20 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 	zincData := fmt.Sprintf(`{
 		"UUID":        "%s"
 	}`, *bucket.UUID)
-	DeleteDocument("articles", zincData, *bucket.UUID)
+	DeleteDocument(fmt.Sprintf("%s-%s-articles", bucket.Username, bucket.Project), zincData, *bucket.UUID, bucket.Username, bucket.Password)
 	return &article, deleteError
 }
-func FindArticle(title string, jwt string, project string) (*model.Article, error) {
-	message, _ := JWTValidityCheck(jwt)
+func FindArticle(input *model.FindArticlePrivateType) (*model.Article, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	collection := client.Database(project).Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s-%s", input.Username, input.Project)).Collection("articles")
 	var article model.Article
 
 	//Passing the bson.D{{}} as the filter matches documents in the collection
-	err := collection.FindOne(context.TODO(), bson.M{"url": title}).Decode(&article)
+	err := collection.FindOne(context.TODO(), bson.M{"url": input.Title}).Decode(&article)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -116,7 +116,7 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	}
 	imageURL := UploadUpdatedFileToS3(input)
 	client := ConnectToMongo()
-	collection := client.Database("blog").Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s/%s", input.Username, input.Project)).Collection("articles")
 
 	filter := bson.M{"uuid": input.UUID}
 	update := bson.D{primitive.E{Key: "$set", Value: bson.D{
@@ -143,6 +143,6 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 		"TitleCard":   "%s",
 		"Tags":        "%s"
 	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
-	UpdateDocument("articles", zincData, *input.UUID)
+	UpdateDocument("articles", zincData, *input.UUID, input.Username, input.Password)
 	return &article, err
 }

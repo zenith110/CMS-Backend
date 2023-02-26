@@ -10,31 +10,28 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func CreateProject(jwt string, email string, password string, role string, input *model.CreateProjectInput) (*model.Project, error) {
-	message, _ := JWTValidityCheck(jwt)
+func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
-	user := AuthenticateNonReaders(email, password, jwt, role)
-	if user.Role != "Creator" || user.Role == "Admin" {
-		client := ConnectToMongo()
-		collection := client.Database(email).Collection("projects")
-		var articles model.Articles
-		project := model.Project{Name: input.Name, UUID: input.UUID, Articles: &articles, Authur: input.Author}
-		_, err := collection.InsertOne(context.TODO(), project)
-		if err != nil {
-			var emptyProject model.Project
-			return &emptyProject, err
-		}
-		return &project, nil
+
+	client := ConnectToMongo()
+	collection := client.Database(input.Username).Collection("projects")
+	var articles model.Articles
+	project := model.Project{Name: input.Name, UUID: input.UUID, Articles: &articles, Author: input.Author, Description: input.Description}
+	_, err := collection.InsertOne(context.TODO(), project)
+	if err != nil {
+		var emptyProject model.Project
+		return &emptyProject, err
 	}
-	var emptyProject model.Project
-	defer CloseClientDB()
-	return &emptyProject, nil
+
+	return &project, nil
+
 }
 
-func GetProjects(jwt string, email string, password string) (*model.Projects, error) {
-	message, _ := JWTValidityCheck(jwt)
+func GetProjects(input *model.GetProjectType) (*model.Projects, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
@@ -42,7 +39,7 @@ func GetProjects(jwt string, email string, password string) (*model.Projects, er
 	// Create a temporary array of pointers for Article
 	var projectsStorage []model.Project
 	client := ConnectToMongo()
-	db := client.Database(email).Collection("projects")
+	db := client.Database(input.Username).Collection("projects")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
@@ -73,17 +70,30 @@ func GetProjects(jwt string, email string, password string) (*model.Projects, er
 	defer CloseClientDB()
 	return &projects, err
 }
-func DeleteProject(jwt string, email string, password string, project string, uuid string) (string, error) {
-	message, _ := JWTValidityCheck(jwt)
+func DeleteProject(input *model.DeleteProjectType) (string, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	collection := client.Database(email).Collection("projects")
-	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": uuid})
+	collection := client.Database(input.Username).Collection("projects")
+	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": input.UUID})
 	if deleteResult.DeletedCount == 0 {
 		log.Fatal("Error on deleting data ", deleteError)
 	}
 	defer CloseClientDB()
-	return fmt.Sprintf("Deleted project %s", project), deleteError
+	return fmt.Sprintf("Deleted project %s", input.Project), deleteError
+}
+func DeleteProjects(input *model.DeleteAllProjects) (string, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
+	client := ConnectToMongo()
+	if err := client.Database(input.Username).Collection("projects").Drop(context.TODO()); err != nil {
+		log.Fatal(err)
+	}
+
+	var err error
+	return "", err
 }

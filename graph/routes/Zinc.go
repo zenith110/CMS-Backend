@@ -10,10 +10,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func CreateDocument(index string, data string, uuid string) {
-	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
-	password := "password"
-
+func CreateDocument(index string, data string, uuid string, userName string, password string) {
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_doc/%s", zincBaseUrl, index, uuid)
 	req, err := http.NewRequest("PUT", zincDocumentUrl, strings.NewReader(data))
@@ -37,13 +34,11 @@ func CreateDocument(index string, data string, uuid string) {
 	}
 
 	log.WithFields(log.Fields{
-		"article state": "Returning response",
-	}).Info(fmt.Sprintf("Article data: %s", string(body)))
+		"document state": "Returning response",
+	}).Info(fmt.Sprintf("document data: %s", string(body)))
 
 }
-func UpdateDocument(index string, data string, uuid string) {
-	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
-	password := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
+func UpdateDocument(index string, data string, uuid string, userName string, password string) {
 
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_update/%s", zincBaseUrl, index, uuid)
@@ -70,10 +65,7 @@ func UpdateDocument(index string, data string, uuid string) {
 		"article state": "Returning response",
 	}).Info(fmt.Sprintf("Article data: %s", string(body)))
 }
-func DeleteDocument(index string, data string, uuid string) {
-	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
-	password := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
-
+func DeleteDocument(index string, data string, uuid string, userName string, password string) {
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_doc/%s", zincBaseUrl, index, uuid)
 
@@ -99,11 +91,11 @@ func DeleteDocument(index string, data string, uuid string) {
 		"article state": "Returning response",
 	}).Info(fmt.Sprintf("Article data: %s", string(body)))
 }
-func SearchDocuments(indexName string, searchTerm string) []byte {
-	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
-	password := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
+func SearchDocuments(indexName string, searchTerm string, userName string, password string) []byte {
 	zincBaseUrl := os.Getenv("ZINCBASE")
+	if searchTerm == "" {
 
+	}
 	query := fmt.Sprintf(`{
         "search_type": "match",
         "query":
