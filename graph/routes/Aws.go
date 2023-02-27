@@ -73,7 +73,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 
 	finalImage := bytes.NewReader(buffer.Bytes())
 	_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
-		Bucket:      aws.String(fmt.Sprintf("%s-%s-images", input.Username, input.Project)),
+		Bucket:      aws.String(os.Getenv("BLOG_BUCKET")),
 		Key:         aws.String(*input.URL + "/" + *input.TitleCard.Name),
 		Body:        finalImage,
 		ACL:         aws.String("public-read"),
@@ -83,19 +83,19 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 	if err != nil {
 		panic(fmt.Errorf("error has occured! %s", err))
 	}
-	url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.Project, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+	url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
 	if err != nil {
 		panic(fmt.Errorf("error has occured! %s", err))
 	}
 	image := model.Image{URL: *input.URL, Type: *input.TitleCard.ContentType, Name: *input.TitleCard.Name, UUID: uuid.NewString()}
-	UploadImageDB(image, url, input.Email, input.Project)
+	UploadImageDB(image, url, input.Username, input.ProjectUUID)
 
 	zincData := fmt.Sprintf(`{
 		"Url": "%s",
 		"Type": "%s",
 		"Name": "%s"
 	}`, url, *input.TitleCard.ContentType, *input.TitleCard.Name)
-	CreateDocument(fmt.Sprintf("%s-%s-images", input.Username, input.Password), zincData, *input.UUID, input.Username, input.Password)
+	CreateDocument(fmt.Sprintf("%s-%s-%s-images", os.Getenv("BLOG_BUCKET"), input.Username, input.Password), zincData, *input.UUID, input.Username, input.Password)
 
 	return url
 }
@@ -157,6 +157,17 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 	return url
 }
 
+//	func CreateProjectBucket(bucketName string) {
+//		session, err := session.NewSession(&aws.Config{
+//			Region:      aws.String(os.Getenv("AWS_REGION")),
+//			Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
+//		})
+//		if err != nil {
+//			panic(fmt.Errorf("session connection error has occured!\n%v", err))
+//		}
+//		// Makes an s3 service client
+//		s3sc := s3.New(session)
+//	}
 func DeleteArticleBucket(bucketName string) {
 	session, err := session.NewSession(&aws.Config{
 		Region:      aws.String(os.Getenv("AWS_REGION")),

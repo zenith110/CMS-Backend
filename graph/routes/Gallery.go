@@ -16,9 +16,9 @@ import (
 // 	return UploadToGallery(file), err
 // }
 
-func UploadImageDB(image model.Image, url string, email string, project string) (model.Image, error) {
+func UploadImageDB(image model.Image, url string, username string, project string) (model.Image, error) {
 	client := ConnectToMongo()
-	collection := client.Database(email).Collection("images")
+	collection := client.Database(username).Collection("images")
 	res, err := collection.InsertOne(context.TODO(), image)
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +29,7 @@ func UploadImageDB(image model.Image, url string, email string, project string) 
 	defer CloseClientDB()
 	return image, err
 }
-func GalleryFindImages(jwt string, email string) (*model.GalleryImages, error) {
+func GalleryFindImages(jwt string, username string) (*model.GalleryImages, error) {
 	message, _ := JWTValidityCheck(jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
@@ -38,7 +38,7 @@ func GalleryFindImages(jwt string, email string) (*model.GalleryImages, error) {
 	// Create a temporary array of pointers for Article
 	var imagesStorage []model.Image
 	client := ConnectToMongo()
-	db := client.Database(email).Collection("images")
+	db := client.Database(username).Collection("images")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)

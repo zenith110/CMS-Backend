@@ -88,7 +88,7 @@ type ComplexityRoot struct {
 		CreateArticle     func(childComplexity int, input *model.CreateArticleInfo) int
 		CreateProject     func(childComplexity int, input *model.CreateProjectInput) int
 		CreateUser        func(childComplexity int, input *model.UserCreation) int
-		DeleteAllArticles func(childComplexity int, jwt string, username string, password string, project string) int
+		DeleteAllArticles func(childComplexity int, input *model.DeleteAllArticlesInput) int
 		DeleteArticle     func(childComplexity int, input *model.DeleteBucketInfo) int
 		DeleteProject     func(childComplexity int, input *model.DeleteProjectType) int
 		DeleteProjects    func(childComplexity int, input *model.DeleteAllProjects) int
@@ -111,7 +111,7 @@ type ComplexityRoot struct {
 	Query struct {
 		ArticlePrivate     func(childComplexity int, input *model.FindArticlePrivateType) int
 		ArticlePublic      func(childComplexity int, input *model.FindArticlePublicType) int
-		ArticlesPrivate    func(childComplexity int, jwt string, project string, username string, password string) int
+		ArticlesPrivate    func(childComplexity int, input *model.ArticlesPrivate) int
 		ArticlesPublic     func(childComplexity int, input *model.GetZincArticleInput) int
 		GetGalleryImages   func(childComplexity int, jwt string, username string) int
 		GetProjects        func(childComplexity int, input *model.GetProjectType) int
@@ -145,8 +145,8 @@ type ComplexityRoot struct {
 type MutationResolver interface {
 	CreateArticle(ctx context.Context, input *model.CreateArticleInfo) (*model.Article, error)
 	UpdateArticle(ctx context.Context, input *model.UpdatedArticleInfo) (*model.Article, error)
-	DeleteArticle(ctx context.Context, input *model.DeleteBucketInfo) (*model.Article, error)
-	DeleteAllArticles(ctx context.Context, jwt string, username string, password string, project string) (*model.Article, error)
+	DeleteArticle(ctx context.Context, input *model.DeleteBucketInfo) (string, error)
+	DeleteAllArticles(ctx context.Context, input *model.DeleteAllArticlesInput) (string, error)
 	CreateProject(ctx context.Context, input *model.CreateProjectInput) (*model.Project, error)
 	CreateUser(ctx context.Context, input *model.UserCreation) (*model.User, error)
 	LoginUser(ctx context.Context, username string, password string) (string, error)
@@ -155,7 +155,7 @@ type MutationResolver interface {
 }
 type QueryResolver interface {
 	ArticlePrivate(ctx context.Context, input *model.FindArticlePrivateType) (*model.Article, error)
-	ArticlesPrivate(ctx context.Context, jwt string, project string, username string, password string) (*model.Articles, error)
+	ArticlesPrivate(ctx context.Context, input *model.ArticlesPrivate) (*model.Articles, error)
 	ArticlesPublic(ctx context.Context, input *model.GetZincArticleInput) (*model.Articles, error)
 	GetGalleryImages(ctx context.Context, jwt string, username string) (*model.GalleryImages, error)
 	GetProjects(ctx context.Context, input *model.GetProjectType) (*model.Projects, error)
@@ -370,7 +370,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Mutation.DeleteAllArticles(childComplexity, args["jwt"].(string), args["username"].(string), args["password"].(string), args["project"].(string)), true
+		return e.complexity.Mutation.DeleteAllArticles(childComplexity, args["input"].(*model.DeleteAllArticlesInput)), true
 
 	case "Mutation.deleteArticle":
 		if e.complexity.Mutation.DeleteArticle == nil {
@@ -508,7 +508,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 			return 0, false
 		}
 
-		return e.complexity.Query.ArticlesPrivate(childComplexity, args["jwt"].(string), args["project"].(string), args["username"].(string), args["password"].(string)), true
+		return e.complexity.Query.ArticlesPrivate(childComplexity, args["input"].(*model.ArticlesPrivate)), true
 
 	case "Query.articlesPublic":
 		if e.complexity.Query.ArticlesPublic == nil {
@@ -639,9 +639,11 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 	ec := executionContext{rc, e}
 	inputUnmarshalMap := graphql.BuildUnmarshalerMap(
 		ec.unmarshalInputArticleTagInput,
+		ec.unmarshalInputArticlesPrivate,
 		ec.unmarshalInputAuthorInput,
 		ec.unmarshalInputCreateArticleInfo,
 		ec.unmarshalInputCreateProjectInput,
+		ec.unmarshalInputDeleteAllArticlesInput,
 		ec.unmarshalInputDeleteAllProjects,
 		ec.unmarshalInputDeleteBucketInfo,
 		ec.unmarshalInputDeleteProjectType,
@@ -800,42 +802,15 @@ func (ec *executionContext) field_Mutation_createUser_args(ctx context.Context, 
 func (ec *executionContext) field_Mutation_deleteAllArticles_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["jwt"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 *model.DeleteAllArticlesInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalODeleteAllArticlesInput2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐDeleteAllArticlesInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["jwt"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["username"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["username"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["password"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["password"] = arg2
-	var arg3 string
-	if tmp, ok := rawArgs["project"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["project"] = arg3
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -971,42 +946,15 @@ func (ec *executionContext) field_Query_articlePublic_args(ctx context.Context, 
 func (ec *executionContext) field_Query_articlesPrivate_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
 	var err error
 	args := map[string]interface{}{}
-	var arg0 string
-	if tmp, ok := rawArgs["jwt"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-		arg0, err = ec.unmarshalNString2string(ctx, tmp)
+	var arg0 *model.ArticlesPrivate
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOArticlesPrivate2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐArticlesPrivate(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
 	}
-	args["jwt"] = arg0
-	var arg1 string
-	if tmp, ok := rawArgs["project"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
-		arg1, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["project"] = arg1
-	var arg2 string
-	if tmp, ok := rawArgs["username"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-		arg2, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["username"] = arg2
-	var arg3 string
-	if tmp, ok := rawArgs["password"]; ok {
-		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-		arg3, err = ec.unmarshalNString2string(ctx, tmp)
-		if err != nil {
-			return nil, err
-		}
-	}
-	args["password"] = arg3
+	args["input"] = arg0
 	return args, nil
 }
 
@@ -2241,9 +2189,9 @@ func (ec *executionContext) _Mutation_deleteArticle(ctx context.Context, field g
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Article)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNArticle2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐArticle(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteArticle(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2253,27 +2201,7 @@ func (ec *executionContext) fieldContext_Mutation_deleteArticle(ctx context.Cont
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "title":
-				return ec.fieldContext_Article_title(ctx, field)
-			case "titleCard":
-				return ec.fieldContext_Article_titleCard(ctx, field)
-			case "author":
-				return ec.fieldContext_Article_author(ctx, field)
-			case "contentData":
-				return ec.fieldContext_Article_contentData(ctx, field)
-			case "dateWritten":
-				return ec.fieldContext_Article_dateWritten(ctx, field)
-			case "url":
-				return ec.fieldContext_Article_url(ctx, field)
-			case "description":
-				return ec.fieldContext_Article_description(ctx, field)
-			case "uuid":
-				return ec.fieldContext_Article_uuid(ctx, field)
-			case "tags":
-				return ec.fieldContext_Article_tags(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Article", field.Name)
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	defer func() {
@@ -2304,7 +2232,7 @@ func (ec *executionContext) _Mutation_deleteAllArticles(ctx context.Context, fie
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Mutation().DeleteAllArticles(rctx, fc.Args["jwt"].(string), fc.Args["username"].(string), fc.Args["password"].(string), fc.Args["project"].(string))
+		return ec.resolvers.Mutation().DeleteAllArticles(rctx, fc.Args["input"].(*model.DeleteAllArticlesInput))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2315,9 +2243,9 @@ func (ec *executionContext) _Mutation_deleteAllArticles(ctx context.Context, fie
 		}
 		return graphql.Null
 	}
-	res := resTmp.(*model.Article)
+	res := resTmp.(string)
 	fc.Result = res
-	return ec.marshalNArticle2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐArticle(ctx, field.Selections, res)
+	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
 func (ec *executionContext) fieldContext_Mutation_deleteAllArticles(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
@@ -2327,27 +2255,7 @@ func (ec *executionContext) fieldContext_Mutation_deleteAllArticles(ctx context.
 		IsMethod:   true,
 		IsResolver: true,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
-			switch field.Name {
-			case "title":
-				return ec.fieldContext_Article_title(ctx, field)
-			case "titleCard":
-				return ec.fieldContext_Article_titleCard(ctx, field)
-			case "author":
-				return ec.fieldContext_Article_author(ctx, field)
-			case "contentData":
-				return ec.fieldContext_Article_contentData(ctx, field)
-			case "dateWritten":
-				return ec.fieldContext_Article_dateWritten(ctx, field)
-			case "url":
-				return ec.fieldContext_Article_url(ctx, field)
-			case "description":
-				return ec.fieldContext_Article_description(ctx, field)
-			case "uuid":
-				return ec.fieldContext_Article_uuid(ctx, field)
-			case "tags":
-				return ec.fieldContext_Article_tags(ctx, field)
-			}
-			return nil, fmt.Errorf("no field named %q was found under type Article", field.Name)
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	defer func() {
@@ -3028,7 +2936,7 @@ func (ec *executionContext) _Query_articlesPrivate(ctx context.Context, field gr
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return ec.resolvers.Query().ArticlesPrivate(rctx, fc.Args["jwt"].(string), fc.Args["project"].(string), fc.Args["username"].(string), fc.Args["password"].(string))
+		return ec.resolvers.Query().ArticlesPrivate(rctx, fc.Args["input"].(*model.ArticlesPrivate))
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -5771,6 +5679,58 @@ func (ec *executionContext) unmarshalInputArticleTagInput(ctx context.Context, o
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputArticlesPrivate(ctx context.Context, obj interface{}) (model.ArticlesPrivate, error) {
+	var it model.ArticlesPrivate
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"jwt", "project_uuid", "username", "password"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "jwt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "project_uuid":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
+			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "username":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputAuthorInput(ctx context.Context, obj interface{}) (model.AuthorInput, error) {
 	var it model.AuthorInput
 	asMap := map[string]interface{}{}
@@ -5806,7 +5766,7 @@ func (ec *executionContext) unmarshalInputCreateArticleInfo(ctx context.Context,
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt", "project", "email", "username", "password"}
+	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt", "project_uuid", "username", "password"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -5893,19 +5853,11 @@ func (ec *executionContext) unmarshalInputCreateArticleInfo(ctx context.Context,
 			if err != nil {
 				return it, err
 			}
-		case "project":
+		case "project_uuid":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
-			it.Project, err = ec.unmarshalNString2string(ctx, v)
-			if err != nil {
-				return it, err
-			}
-		case "email":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
+			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6015,6 +5967,58 @@ func (ec *executionContext) unmarshalInputCreateProjectInput(ctx context.Context
 	return it, nil
 }
 
+func (ec *executionContext) unmarshalInputDeleteAllArticlesInput(ctx context.Context, obj interface{}) (model.DeleteAllArticlesInput, error) {
+	var it model.DeleteAllArticlesInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"jwt", "project_uuid", "username", "password"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "jwt":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
+			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "project_uuid":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
+			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "username":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
 func (ec *executionContext) unmarshalInputDeleteAllProjects(ctx context.Context, obj interface{}) (model.DeleteAllProjects, error) {
 	var it model.DeleteAllProjects
 	asMap := map[string]interface{}{}
@@ -6058,7 +6062,7 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"uuid", "bucketName", "jwt", "project", "username", "password"}
+	fieldsInOrder := [...]string{"uuid", "jwt", "project_uuid", "username", "password"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6073,14 +6077,6 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "bucketName":
-			var err error
-
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bucketName"))
-			it.BucketName, err = ec.unmarshalOString2ᚖstring(ctx, v)
-			if err != nil {
-				return it, err
-			}
 		case "jwt":
 			var err error
 
@@ -6089,11 +6085,11 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 			if err != nil {
 				return it, err
 			}
-		case "project":
+		case "project_uuid":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
-			it.Project, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
+			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8320,6 +8316,14 @@ func (ec *executionContext) marshalOArticles2ᚖgithubᚗcomᚋzenith110ᚋCMS�
 	return ec._Articles(ctx, sel, v)
 }
 
+func (ec *executionContext) unmarshalOArticlesPrivate2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐArticlesPrivate(ctx context.Context, v interface{}) (*model.ArticlesPrivate, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputArticlesPrivate(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) unmarshalOBoolean2bool(ctx context.Context, v interface{}) (bool, error) {
 	res, err := graphql.UnmarshalBoolean(v)
 	return res, graphql.ErrorOnPath(ctx, err)
@@ -8359,6 +8363,14 @@ func (ec *executionContext) unmarshalOCreateProjectInput2ᚖgithubᚗcomᚋzenit
 		return nil, nil
 	}
 	res, err := ec.unmarshalInputCreateProjectInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
+func (ec *executionContext) unmarshalODeleteAllArticlesInput2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐDeleteAllArticlesInput(ctx context.Context, v interface{}) (*model.DeleteAllArticlesInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputDeleteAllArticlesInput(ctx, v)
 	return &res, graphql.ErrorOnPath(ctx, err)
 }
 

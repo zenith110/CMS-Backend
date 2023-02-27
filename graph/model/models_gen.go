@@ -31,6 +31,13 @@ type Articles struct {
 	Total   int       `json:"total"`
 }
 
+type ArticlesPrivate struct {
+	Jwt         string `json:"jwt"`
+	ProjectUUID string `json:"project_uuid"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+}
+
 type Author struct {
 	Name    string `json:"name"`
 	Profile string `json:"profile"`
@@ -52,8 +59,7 @@ type CreateArticleInfo struct {
 	UUID        *string   `json:"uuid"`
 	Tags        []TagData `json:"tags"`
 	Jwt         string    `json:"jwt"`
-	Project     string    `json:"project"`
-	Email       string    `json:"email"`
+	ProjectUUID string    `json:"project_uuid"`
 	Username    string    `json:"username"`
 	Password    string    `json:"password"`
 }
@@ -69,18 +75,24 @@ type CreateProjectInput struct {
 	Description string `json:"description"`
 }
 
+type DeleteAllArticlesInput struct {
+	Jwt         string `json:"jwt"`
+	ProjectUUID string `json:"project_uuid"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+}
+
 type DeleteAllProjects struct {
 	Username string `json:"username"`
 	Jwt      string `json:"jwt"`
 }
 
 type DeleteBucketInfo struct {
-	UUID       *string `json:"uuid"`
-	BucketName *string `json:"bucketName"`
-	Jwt        string  `json:"jwt"`
-	Project    string  `json:"project"`
-	Username   string  `json:"username"`
-	Password   string  `json:"password"`
+	UUID        *string `json:"uuid"`
+	Jwt         string  `json:"jwt"`
+	ProjectUUID string  `json:"project_uuid"`
+	Username    string  `json:"username"`
+	Password    string  `json:"password"`
 }
 
 type DeleteProjectType struct {

@@ -5,7 +5,7 @@ schema {
 }
 type Query {
   articlePrivate(input: FindArticlePrivateType): Article
-  articlesPrivate(jwt: String!, project: String!, username: String!, password: String!): Articles
+  articlesPrivate(input: ArticlesPrivate): Articles
   articlesPublic(input: GetZincArticleInput): Articles
   getGalleryImages(jwt: String!, username: String!): GalleryImages
   getProjects(input: GetProjectType): Projects
@@ -16,13 +16,19 @@ type Mutation {
     input: CreateArticleInfo
   ): Article!
   updateArticle(input: UpdatedArticleInfo): Article!
-  deleteArticle(input: DeleteBucketInfo): Article!
-  deleteAllArticles(jwt: String!, username: String!, password: String!, project: String!): Article!
+  deleteArticle(input: DeleteBucketInfo): String!
+  deleteAllArticles(input: DeleteAllArticlesInput): String!
   createProject(input: CreateProjectInput): Project!
   createUser(input: UserCreation): User
   loginUser(username: String!, password: String!): String!
   deleteProject(input: DeleteProjectType): String!
   deleteProjects(input: DeleteAllProjects): String!
+}
+input ArticlesPrivate{
+  jwt: String!, 
+  project_uuid: String!, 
+  username: String!, 
+  password: String!
 }
 input DeleteAllProjects{
   username: String!
@@ -87,11 +93,16 @@ input CreateProjectInput{
 type jwt{
   token: String!
 }
+input DeleteAllArticlesInput{
+  jwt: String!
+  project_uuid: String!
+  username: String!
+  password: String!
+}
 input DeleteBucketInfo{
   uuid: String
-  bucketName: String
   jwt: String!
-  project: String!
+  project_uuid: String!
   username: String!
   password: String!
 }
@@ -106,8 +117,7 @@ input CreateArticleInfo{
     uuid: String
     tags: [TagData!]
     jwt: String!
-    project: String!
-    email: String!
+    project_uuid: String!
     username: String!
     password: String!
 }

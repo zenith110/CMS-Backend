@@ -25,15 +25,15 @@ func (r *mutationResolver) UpdateArticle(ctx context.Context, input *model.Updat
 }
 
 // DeleteArticle is the resolver for the deleteArticle field.
-func (r *mutationResolver) DeleteArticle(ctx context.Context, input *model.DeleteBucketInfo) (*model.Article, error) {
-	article, err := routes.DeleteArticle(input)
-	return article, err
+func (r *mutationResolver) DeleteArticle(ctx context.Context, input *model.DeleteBucketInfo) (string, error) {
+	_, err := routes.DeleteArticle(input)
+	return "", err
 }
 
 // DeleteAllArticles is the resolver for the deleteAllArticles field.
-func (r *mutationResolver) DeleteAllArticles(ctx context.Context, jwt string, username string, password string, project string) (*model.Article, error) {
-	article, err := routes.DeleteArticles(jwt, username, password, project)
-	return article, err
+func (r *mutationResolver) DeleteAllArticles(ctx context.Context, input *model.DeleteAllArticlesInput) (string, error) {
+	_, err := routes.DeleteArticles(input)
+	return "", err
 }
 
 // CreateProject is the resolver for the createProject field.
@@ -73,8 +73,9 @@ func (r *queryResolver) ArticlePrivate(ctx context.Context, input *model.FindArt
 }
 
 // ArticlesPrivate is the resolver for the articlesPrivate field.
-func (r *queryResolver) ArticlesPrivate(ctx context.Context, jwt string, project string, username string, password string) (*model.Articles, error) {
-	panic(fmt.Errorf("not implemented: ArticlesPrivate - articlesPrivate"))
+func (r *queryResolver) ArticlesPrivate(ctx context.Context, input *model.ArticlesPrivate) (*model.Articles, error) {
+	articles, err := routes.FetchArticles(input)
+	return articles, err
 }
 
 // ArticlesPublic is the resolver for the articlesPublic field.
