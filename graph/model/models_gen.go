@@ -93,6 +93,7 @@ type DeleteBucketInfo struct {
 	ProjectUUID string  `json:"project_uuid"`
 	Username    string  `json:"username"`
 	Password    string  `json:"password"`
+	Articlename string  `json:"articlename"`
 }
 
 type DeleteProjectType struct {
@@ -180,7 +181,7 @@ type UpdatedArticleInfo struct {
 	Tags        []TagData `json:"tags"`
 	Jwt         string    `json:"jwt"`
 	Username    string    `json:"username"`
-	Project     string    `json:"project"`
+	ProjectUUID string    `json:"project_uuid"`
 	Password    string    `json:"password"`
 }
 

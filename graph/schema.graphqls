@@ -105,6 +105,7 @@ input DeleteBucketInfo{
   project_uuid: String!
   username: String!
   password: String!
+  articlename: String!
 }
 input CreateArticleInfo{
     title: String
@@ -144,7 +145,7 @@ input UpdatedArticleInfo{
     tags: [TagData!]
     jwt: String!
     username: String!
-    project: String!
+    project_uuid: String!
     password: String!
 }
 

@@ -59,7 +59,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"article state": "created mongodb instance",
 	}).Info("Article has been created, inserting into zinc!")
 
-	CreateDocument(fmt.Sprintf("%s-%s-articles-%s", input.Username, input.ProjectUUID, *input.UUID), zincData, *input.UUID, input.Username, input.Password)
+	CreateDocument(fmt.Sprintf("%s-%s-articles", input.Username, input.ProjectUUID), zincData, *input.UUID, input.Username, input.Password)
 	log.WithFields(log.Fields{
 		"article state": "finished insertion",
 	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
@@ -71,9 +71,9 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s/%s", bucket.Username, bucket.ProjectUUID)).Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s-%s", bucket.Username, bucket.ProjectUUID)).Collection("articles")
 	article := model.Article{UUID: *bucket.UUID}
-	DeleteArticleBucket(fmt.Sprintf("%s/%s", bucket.Username, bucket.ProjectUUID))
+	DeleteArticleFolder(fmt.Sprintf("%s-%s-images", bucket.Username, bucket.ProjectUUID), bucket.Articlename)
 	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": *bucket.UUID})
 	if deleteResult.DeletedCount == 0 {
 		log.Fatal("Error on deleting data ", deleteError)
@@ -116,7 +116,7 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	}
 	imageURL := UploadUpdatedFileToS3(input)
 	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s/%s", input.Username, input.Project)).Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles")
 
 	filter := bson.M{"uuid": input.UUID}
 	update := bson.D{primitive.E{Key: "$set", Value: bson.D{

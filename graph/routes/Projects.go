@@ -82,6 +82,8 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 		log.Fatal("Error on deleting data ", deleteError)
 	}
 	defer CloseClientDB()
+	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.UUID)
+	DeleteBucket(bucketName)
 	return fmt.Sprintf("Deleted project %s", input.Project), deleteError
 }
 func DeleteProjects(input *model.DeleteAllProjects) (string, error) {
@@ -93,7 +95,7 @@ func DeleteProjects(input *model.DeleteAllProjects) (string, error) {
 	if err := client.Database(input.Username).Collection("projects").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
 	}
-
+	DeleteAllProjectsBuckets(input.Username)
 	var err error
 	return "", err
 }

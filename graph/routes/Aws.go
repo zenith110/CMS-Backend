@@ -7,7 +7,9 @@ import (
 	"image"
 	"image/jpeg"
 	"image/png"
+	"log"
 	"os"
+	"strings"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/aws/credentials"
@@ -70,34 +72,68 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			panic(fmt.Errorf("error has occured! could not convert image to png\n%v", err))
 		}
 	}
-
+	// Create S3 service client
+	s3sc := s3.New(session)
+	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
+	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	finalImage := bytes.NewReader(buffer.Bytes())
-	_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
-		Bucket:      aws.String(os.Getenv("BLOG_BUCKET")),
-		Key:         aws.String(*input.URL + "/" + *input.TitleCard.Name),
-		Body:        finalImage,
-		ACL:         aws.String("public-read"),
-		ContentType: aws.String(*input.TitleCard.ContentType),
-	})
+	fmt.Printf("the bucket status is %v ", bucketExist)
+	if bucketExist == true {
+		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(bucketName),
+			Key:         aws.String(*input.URL + "/" + *input.TitleCard.Name),
+			Body:        finalImage,
+			ACL:         aws.String("public-read"),
+			ContentType: aws.String(*input.TitleCard.ContentType),
+		})
 
-	if err != nil {
-		panic(fmt.Errorf("error has occured! %s", err))
+		if err != nil {
+			panic(fmt.Errorf("error has occured in uploading! %s", err))
+		}
+		url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		if err != nil {
+			panic(fmt.Errorf("error has occured! %s", err))
+		}
+		image := model.Image{URL: *input.URL, Type: *input.TitleCard.ContentType, Name: *input.TitleCard.Name, UUID: uuid.NewString()}
+		UploadImageDB(image, url, input.Username, input.ProjectUUID)
+
+		zincData := fmt.Sprintf(`{
+			"Url": "%s",
+			"Type": "%s",
+			"Name": "%s"
+		}`, url, *input.TitleCard.ContentType, *input.TitleCard.Name)
+		CreateDocument(bucketName, zincData, *input.UUID, input.Username, input.Password)
+
+		return url
+	} else {
+		CreateProjectBucket(s3sc, bucketName)
+		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(bucketName),
+			Key:         aws.String(*input.URL + "/" + *input.TitleCard.Name),
+			Body:        finalImage,
+			ACL:         aws.String("public-read"),
+			ContentType: aws.String(*input.TitleCard.ContentType),
+		})
+
+		if err != nil {
+			panic(fmt.Errorf("error has occured! %s", err))
+		}
+		url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		if err != nil {
+			panic(fmt.Errorf("error has occured! %s", err))
+		}
+		image := model.Image{URL: *input.URL, Type: *input.TitleCard.ContentType, Name: *input.TitleCard.Name, UUID: uuid.NewString()}
+		UploadImageDB(image, url, input.Username, input.ProjectUUID)
+
+		zincData := fmt.Sprintf(`{
+			"Url": "%s",
+			"Type": "%s",
+			"Name": "%s"
+		}`, url, *input.TitleCard.ContentType, *input.TitleCard.Name)
+		CreateDocument(bucketName, zincData, *input.UUID, input.Username, input.Password)
+
+		return url
 	}
-	url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
-	if err != nil {
-		panic(fmt.Errorf("error has occured! %s", err))
-	}
-	image := model.Image{URL: *input.URL, Type: *input.TitleCard.ContentType, Name: *input.TitleCard.Name, UUID: uuid.NewString()}
-	UploadImageDB(image, url, input.Username, input.ProjectUUID)
-
-	zincData := fmt.Sprintf(`{
-		"Url": "%s",
-		"Type": "%s",
-		"Name": "%s"
-	}`, url, *input.TitleCard.ContentType, *input.TitleCard.Name)
-	CreateDocument(fmt.Sprintf("%s-%s-%s-images", os.Getenv("BLOG_BUCKET"), input.Username, input.Password), zincData, *input.UUID, input.Username, input.Password)
-
-	return url
 }
 
 func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
@@ -142,33 +178,79 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		}
 	}
 	finalImage := bytes.NewReader(buffer.Bytes())
-	_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
-		Bucket:      aws.String(fmt.Sprintf("%s-%s-images", input.Username, input.Project)),
-		Key:         aws.String(*input.URL + "/" + *input.TitleCard.Name),
-		Body:        finalImage,
-		ACL:         aws.String("public-read"),
-		ContentType: aws.String(*input.TitleCard.ContentType),
-	})
+	s3sc := s3.New(session)
+	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
+	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 
-	if err != nil {
-		panic(fmt.Errorf("error has occured! %s", err))
+	if bucketExist == true {
+		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(bucketName),
+			Key:         aws.String(*input.URL + "/" + *input.TitleCard.Name),
+			Body:        finalImage,
+			ACL:         aws.String("public-read"),
+			ContentType: aws.String(*input.TitleCard.ContentType),
+		})
+
+		if err != nil {
+			panic(fmt.Errorf("error has occured! %s", err))
+		}
+		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		return url
+	} else {
+		CreateProjectBucket(s3sc, bucketName)
+		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(bucketName),
+			Key:         aws.String(*input.URL + "/" + *input.TitleCard.Name),
+			Body:        finalImage,
+			ACL:         aws.String("public-read"),
+			ContentType: aws.String(*input.TitleCard.ContentType),
+		})
+
+		if err != nil {
+			panic(fmt.Errorf("error has occured! %s", err))
+		}
+		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		return url
 	}
-	url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.Project, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
-	return url
 }
+func exitErrorf(msg string, args ...interface{}) {
+	fmt.Fprintf(os.Stderr, msg+"\n", args...)
+	os.Exit(1)
+}
+func CheckIfBucketExist(s3sc *s3.S3, bucketName string) bool {
+	result, err := s3sc.ListBuckets(nil)
+	if err != nil {
+		exitErrorf("Unable to list buckets, %v", err)
+	}
+	exist := false
+	fmt.Println("Buckets:")
 
-//	func CreateProjectBucket(bucketName string) {
-//		session, err := session.NewSession(&aws.Config{
-//			Region:      aws.String(os.Getenv("AWS_REGION")),
-//			Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
-//		})
-//		if err != nil {
-//			panic(fmt.Errorf("session connection error has occured!\n%v", err))
-//		}
-//		// Makes an s3 service client
-//		s3sc := s3.New(session)
-//	}
-func DeleteArticleBucket(bucketName string) {
+	for _, b := range result.Buckets {
+		if aws.StringValue(b.Name) == bucketName {
+			exist = true
+		} else {
+			continue
+		}
+	}
+	return exist
+}
+func CreateProjectBucket(s3sc *s3.S3, bucketName string) {
+	var err error
+	_, err = s3sc.CreateBucket(&s3.CreateBucketInput{
+		Bucket: aws.String(bucketName),
+	})
+	if err != nil {
+		exitErrorf("Unable to create bucket %q, %v", bucketName, err)
+	}
+
+	// Wait until bucket is created before finishing
+	fmt.Printf("Waiting for bucket %q to be created...\n", bucketName)
+
+	err = s3sc.WaitUntilBucketExists(&s3.HeadBucketInput{
+		Bucket: aws.String(bucketName),
+	})
+}
+func DeleteArticleFolder(bucketName string, articleName string) {
 	session, err := session.NewSession(&aws.Config{
 		Region:      aws.String(os.Getenv("AWS_REGION")),
 		Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
@@ -180,13 +262,55 @@ func DeleteArticleBucket(bucketName string) {
 	s3sc := s3.New(session)
 
 	iterator := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
-		Bucket: aws.String(os.Getenv("BLOG_BUCKET")),
-		Prefix: aws.String(bucketName + "/"),
+		Bucket: aws.String(bucketName),
+		Prefix: aws.String(articleName),
 	})
 	if err := s3manager.NewBatchDeleteWithClient(s3sc).Delete(context.Background(), iterator); err != nil {
 		panic(fmt.Errorf("unable to delete objects from bucket %q, %v", bucketName, err))
 	}
 
+}
+func DeleteBucket(bucketName string) {
+	session, err := session.NewSession(&aws.Config{
+		Region:      aws.String(os.Getenv("AWS_REGION")),
+		Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
+	})
+	if err != nil {
+		panic(fmt.Errorf("session connection error has occured!\n%v", err))
+	}
+	// Makes an s3 service client
+	s3sc := s3.New(session)
+	s3sc.DeleteBucket(&s3.DeleteBucketInput{
+		Bucket: aws.String(bucketName)})
+	if err != nil {
+		log.Printf("Couldn't delete bucket %v. Here's why: %v\n", bucketName, err)
+	}
+}
+
+/*
+TODO: Modify session code to be handled by an object similar to db
+*/
+func DeleteAllProjectsBuckets(username string) {
+	session, err := session.NewSession(&aws.Config{
+		Region:      aws.String(os.Getenv("AWS_REGION")),
+		Credentials: credentials.NewStaticCredentials(os.Getenv("AWS_ACCESS_KEY_ID"), os.Getenv("AWS_SECRET_ACCESS_KEY"), ""),
+	})
+	if err != nil {
+		panic(fmt.Errorf("session connection error has occured!\n%v", err))
+	}
+	// Makes an s3 service client
+	s3sc := s3.New(session)
+	result, err := s3sc.ListBuckets(nil)
+	if err != nil {
+		exitErrorf("Unable to list buckets, %v", err)
+	}
+
+	for _, b := range result.Buckets {
+		if strings.Contains(*b.Name, username) {
+			DeleteBucket(*aws.String(*b.Name))
+		}
+		continue
+	}
 }
 func ImageScale(srcImage image.Image) *image.RGBA {
 	newImage := image.NewRGBA(image.Rect(0, 0, 345, 140))

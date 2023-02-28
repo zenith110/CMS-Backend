@@ -6062,7 +6062,7 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"uuid", "jwt", "project_uuid", "username", "password"}
+	fieldsInOrder := [...]string{"uuid", "jwt", "project_uuid", "username", "password", "articlename"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6106,6 +6106,14 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
 			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "articlename":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("articlename"))
+			it.Articlename, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6454,7 +6462,7 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt", "username", "project", "password"}
+	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt", "username", "project_uuid", "password"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6549,11 +6557,11 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 			if err != nil {
 				return it, err
 			}
-		case "project":
+		case "project_uuid":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
-			it.Project, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
+			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
