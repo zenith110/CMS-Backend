@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/zenith110/CMS-Backend/graph/model"
@@ -73,7 +74,9 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 	client := ConnectToMongo()
 	collection := client.Database(fmt.Sprintf("%s-%s", bucket.Username, bucket.ProjectUUID)).Collection("articles")
 	article := model.Article{UUID: *bucket.UUID}
-	DeleteArticleFolder(fmt.Sprintf("%s-%s-images", bucket.Username, bucket.ProjectUUID), bucket.Articlename)
+	session := CreateAWSSession()
+	s3sc := s3.New(session)
+	DeleteArticleFolder(s3sc, fmt.Sprintf("%s-%s-images", bucket.Username, bucket.ProjectUUID), bucket.Articlename)
 	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": *bucket.UUID})
 	if deleteResult.DeletedCount == 0 {
 		log.Fatal("Error on deleting data ", deleteError)
