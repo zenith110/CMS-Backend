@@ -15,8 +15,8 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	"github.com/google/uuid"
 	"github.com/zenith110/CMS-Backend/graph/model"
-	"golang.org/x/image/draw"
 )
 
 type ArticleJson struct {
@@ -50,29 +50,27 @@ func ProcessImages(storage map[string]any) bytes.Buffer {
 	srcImage := storage["srcImage"].(image.Image)
 	buffer := storage["buffer"].(bytes.Buffer)
 	var err error
-	imageContentType := storage["imageContentType"]
+	imageContentType := storage["imageContentType"].(string)
+
 	switch imageContentType {
 	case "image/png":
-		newImage := ImageScale(srcImage)
-		err = png.Encode(&buffer, newImage)
+		err = png.Encode(&buffer, srcImage)
 		if err != nil {
 			panic(fmt.Errorf("error has occured! could not convert image to png\n%v", err))
 		}
 	case "image/jpeg":
-		newImage := ImageScale(srcImage)
 		options := jpeg.Options{
 			Quality: 100,
 		}
-		err = jpeg.Encode(&buffer, newImage, &options)
+		err = jpeg.Encode(&buffer, srcImage, &options)
 		if err != nil {
 			panic(fmt.Errorf("error has occured! could not convert image to png\n%v", err))
 		}
 	case "image/jpg":
-		newImage := ImageScale(srcImage)
 		options := jpeg.Options{
 			Quality: 100,
 		}
-		err = jpeg.Encode(&buffer, newImage, &options)
+		err = jpeg.Encode(&buffer, srcImage, &options)
 		if err != nil {
 			panic(fmt.Errorf("error has occured! could not convert image to png\n%v", err))
 		}
@@ -90,7 +88,7 @@ func UploadImage(information map[string]any) string {
 	password := information["password"].(string)
 	projectUuid := information["projectuuid"].(string)
 	finalImage := information["finalImage"].(*bytes.Reader)
-	uuid := information["uuid"].(string)
+	imageUUID := information["imageUUID"].(string)
 	_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
 		Bucket:      aws.String(bucketName),
 		Key:         aws.String(fmt.Sprintf("%s/%s", URL, titleCardName)),
@@ -114,7 +112,7 @@ func UploadImage(information map[string]any) string {
 		"Type": "%s",
 		"Name": "%s"
 	}`, url, contentType, titleCardName)
-	CreateDocument(bucketName, zincData, uuid, username, password)
+	CreateDocument(bucketName, zincData, imageUUID, username, password)
 	return url
 }
 func UploadFileToS3(input *model.CreateArticleInfo) string {
@@ -132,41 +130,42 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 		"srcImage":         srcImage,
 	}
 
-	ProcessImages(storage)
+	finalImageBuffer := ProcessImages(storage)
 
 	// Create S3 service client
 	s3sc := s3.New(session)
 	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
-	finalImage := bytes.NewReader(buffer.Bytes())
-	fmt.Printf("the bucket status is %v ", bucketExist)
+	finalImage := bytes.NewReader(finalImageBuffer.Bytes())
+
 	if bucketExist == true {
 		uploadImageMap := map[string]any{
 			"s3ConnectionUploader": s3ConnectionUploader,
 			"bucketName":           bucketName,
-			"URL":                  input.URL,
-			"titleCardName":        input.TitleCard.Name,
-			"contentType":          input.TitleCard.ContentType,
+			"URL":                  *input.URL,
+			"titleCardName":        *input.TitleCard.Name,
+			"contentType":          *input.TitleCard.ContentType,
 			"username":             input.Username,
 			"password":             input.Password,
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
-			"uuid":                 input.UUID,
+			"imageUUID":            *input.UUID,
 		}
+
 		return UploadImage(uploadImageMap)
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
 		uploadImageMap := map[string]any{
 			"s3ConnectionUploader": s3ConnectionUploader,
 			"bucketName":           bucketName,
-			"URL":                  input.URL,
-			"titleCardName":        input.TitleCard.Name,
-			"contentType":          input.TitleCard.ContentType,
+			"URL":                  *input.URL,
+			"titleCardName":        *input.TitleCard.Name,
+			"contentType":          *input.TitleCard.ContentType,
 			"username":             input.Username,
 			"password":             input.Password,
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
-			"uuid":                 input.UUID,
+			"imageUUID":            *input.UUID,
 		}
 		return UploadImage(uploadImageMap)
 	}
@@ -185,8 +184,8 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		"imageContentType": *input.TitleCard.ContentType,
 		"srcImage":         srcImage,
 	}
-	ProcessImages(storage)
-	finalImage := bytes.NewReader(buffer.Bytes())
+	finalIMageBuffer := ProcessImages(storage)
+	finalImage := bytes.NewReader(finalIMageBuffer.Bytes())
 	s3sc := s3.New(session)
 	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
@@ -231,7 +230,6 @@ func CheckIfBucketExist(s3sc *s3.S3, bucketName string) bool {
 		exitErrorf("Unable to list buckets, %v", err)
 	}
 	exist := false
-	fmt.Println("Buckets:")
 
 	for _, b := range result.Buckets {
 		if aws.StringValue(b.Name) == bucketName {
@@ -262,24 +260,26 @@ func CreateProjectBucket(s3sc *s3.S3, bucketName string) {
 /*
 Deletes individual article folders within a user's project bucket
 */
-func DeleteArticleFolder(s3sc *s3.S3, bucketName string, articleName string) {
-	iterator := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
-		Bucket: aws.String(bucketName),
-		Prefix: aws.String(articleName),
-	})
+func DeleteArticleFolder(s3sc *s3.S3, iterator s3manager.BatchDeleteIterator, bucketName string) {
 	if err := s3manager.NewBatchDeleteWithClient(s3sc).Delete(context.Background(), iterator); err != nil {
 		panic(fmt.Errorf("unable to delete objects from bucket %q, %v", bucketName, err))
 	}
-
+	fmt.Printf("Deleted object(s) from bucket: %s", bucketName)
 }
 
 /*
 Deletes a bucket specified by bucketname
 */
 func DeleteBucket(s3sc *s3.S3, bucketName string) {
+	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+		Bucket: aws.String(bucketName),
+	})
+	// Empty the bucket before deleting
+	DeleteArticleFolder(s3sc, iter, bucketName)
 	// Makes an s3 service client
 	s3sc.DeleteBucket(&s3.DeleteBucketInput{
 		Bucket: aws.String(bucketName)})
+	fmt.Printf("Successfully deleted %s", bucketName)
 }
 
 /*
@@ -296,15 +296,10 @@ func DeleteAllProjectsBuckets(username string) {
 
 	for _, b := range result.Buckets {
 		if strings.Contains(*b.Name, username) {
-			DeleteBucket(s3sc, *aws.String(*b.Name))
+			DeleteBucket(s3sc, *b.Name)
 		}
 		continue
 	}
-}
-func ImageScale(srcImage image.Image) *image.RGBA {
-	newImage := image.NewRGBA(image.Rect(0, 0, 345, 140))
-	draw.ApproxBiLinear.Scale(newImage, newImage.Rect, srcImage, srcImage.Bounds(), draw.Over, nil)
-	return newImage
 }
 
 // func UploadToGallery(file *model.File) string {

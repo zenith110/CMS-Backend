@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	log "github.com/sirupsen/logrus"
 
 	"github.com/zenith110/CMS-Backend/graph/model"
@@ -76,7 +78,13 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
 	article := model.Article{UUID: *bucket.UUID}
 	session := CreateAWSSession()
 	s3sc := s3.New(session)
-	DeleteArticleFolder(s3sc, fmt.Sprintf("%s-%s-images", bucket.Username, bucket.ProjectUUID), bucket.Articlename)
+	bucketName := fmt.Sprintf("%s-%s-images", bucket.Username, bucket.ProjectUUID)
+	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+		Bucket: aws.String(bucketName),
+		Prefix: &bucket.Articlename,
+	})
+
+	DeleteArticleFolder(s3sc, iter, bucketName)
 	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": *bucket.UUID})
 	if deleteResult.DeletedCount == 0 {
 		log.Fatal("Error on deleting data ", deleteError)
@@ -93,11 +101,11 @@ func FindArticle(input *model.FindArticlePrivateType) (*model.Article, error) {
 		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s-%s", input.Username, input.Project)).Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles")
 	var article model.Article
 
 	//Passing the bson.D{{}} as the filter matches documents in the collection
-	err := collection.FindOne(context.TODO(), bson.M{"url": input.Title}).Decode(&article)
+	err := collection.FindOne(context.TODO(), bson.M{"uuid": input.UUID}).Decode(&article)
 	if err != nil {
 		log.Fatal(err)
 	}

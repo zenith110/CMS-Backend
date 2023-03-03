@@ -112,10 +112,10 @@ type File struct {
 }
 
 type FindArticlePrivateType struct {
-	Jwt      string `json:"jwt"`
-	Project  string `json:"project"`
-	Username string `json:"username"`
-	Title    string `json:"title"`
+	Jwt         string `json:"jwt"`
+	ProjectUUID string `json:"project_uuid"`
+	Username    string `json:"username"`
+	UUID        string `json:"uuid"`
 }
 
 type FindArticlePublicType struct {

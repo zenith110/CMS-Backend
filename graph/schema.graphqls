@@ -36,9 +36,9 @@ input DeleteAllProjects{
 }
 input FindArticlePrivateType{
   jwt: String!
-  project: String!
+  project_uuid: String!
   username: String!
-  title: String!
+  uuid: String!
 }
 input FindArticlePublicType{
   project: String!

@@ -6242,7 +6242,7 @@ func (ec *executionContext) unmarshalInputFindArticlePrivateType(ctx context.Con
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"jwt", "project", "username", "title"}
+	fieldsInOrder := [...]string{"jwt", "project_uuid", "username", "uuid"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6257,11 +6257,11 @@ func (ec *executionContext) unmarshalInputFindArticlePrivateType(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "project":
+		case "project_uuid":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
-			it.Project, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
+			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -6273,11 +6273,11 @@ func (ec *executionContext) unmarshalInputFindArticlePrivateType(ctx context.Con
 			if err != nil {
 				return it, err
 			}
-		case "title":
+		case "uuid":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			it.Title, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
+			it.UUID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/aws/aws-sdk-go/service/s3"
 	log "github.com/sirupsen/logrus"
 	"github.com/zenith110/CMS-Backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -83,7 +84,10 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	}
 	defer CloseClientDB()
 	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.UUID)
-	DeleteBucket(bucketName)
+	session := CreateAWSSession()
+	// Makes an s3 service client
+	s3sc := s3.New(session)
+	DeleteBucket(s3sc, bucketName)
 	return fmt.Sprintf("Deleted project %s", input.Project), deleteError
 }
 func DeleteProjects(input *model.DeleteAllProjects) (string, error) {

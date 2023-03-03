@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/zenith110/CMS-Backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -127,6 +130,12 @@ func DeleteArticles(input *model.DeleteAllArticlesInput) (string, error) {
 	imagesIndex := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
 	DeleteIndex(articlesIndex)
 	DeleteIndex(imagesIndex)
+	session := CreateAWSSession()
+	s3sc := s3.New(session)
+	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+		Bucket: aws.String(imagesIndex),
+	})
+	DeleteArticleFolder(s3sc, iter, imagesIndex)
 	var err error
 	return "", err
 }
