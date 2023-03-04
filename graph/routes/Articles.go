@@ -6,6 +6,9 @@ import (
 	"fmt"
 	"log"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
 	"github.com/zenith110/CMS-Backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -48,8 +51,8 @@ type Total struct {
 	Value int64 `json:"value"`
 }
 
-func FetchArticles(jwt string, email string, password string, project string) (*model.Articles, error) {
-	message, _ := JWTValidityCheck(jwt)
+func FetchArticles(input *model.ArticlesPrivate) (*model.Articles, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
@@ -57,7 +60,7 @@ func FetchArticles(jwt string, email string, password string, project string) (*
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	client := ConnectToMongo()
-	db := client.Database(project).Collection("articles")
+	db := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
@@ -88,16 +91,12 @@ func FetchArticles(jwt string, email string, password string, project string) (*
 
 	return &articles, err
 }
-func FetchArticlesZinc(keyword string, jwt string, project string) (*model.Articles, error) {
-	message, _ := JWTValidityCheck(jwt)
-	if message == "Unauthorized!" {
-		panic("Unauthorized!")
-	}
+func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error) {
 	var err error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	var zinc Zinc
-	data := SearchDocuments(fmt.Sprintf("%s/articles", project), keyword)
+	data := SearchDocuments(fmt.Sprintf("%s-%s-articles", input.Username, input.Project), input.Keyword, input.Username, input.Password)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))
@@ -118,20 +117,25 @@ func FetchArticlesZinc(keyword string, jwt string, project string) (*model.Artic
 	var articles = model.Articles{Article: articlesStorage, Total: totalArticles}
 	return &articles, err
 }
-func DeleteArticles(jwt string, email string, password string, project string) (*model.Article, error) {
-	message, _ := JWTValidityCheck(jwt)
+func DeleteArticles(input *model.DeleteAllArticlesInput) (string, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	if err := client.Database(project).Collection("articles").Drop(context.TODO()); err != nil {
+	if err := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
 	}
-	articlesIndex := fmt.Sprintf("%s/articles", project)
-	imagesIndex := fmt.Sprintf("%s/images", project)
+	articlesIndex := fmt.Sprintf("%s-%s-articles", input.Username, input.ProjectUUID)
+	imagesIndex := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
 	DeleteIndex(articlesIndex)
 	DeleteIndex(imagesIndex)
-	var article model.Article
+	session := CreateAWSSession()
+	s3sc := s3.New(session)
+	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+		Bucket: aws.String(imagesIndex),
+	})
+	DeleteArticleFolder(s3sc, iter, imagesIndex)
 	var err error
-	return &article, err
+	return "", err
 }

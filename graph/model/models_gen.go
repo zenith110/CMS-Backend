@@ -31,6 +31,13 @@ type Articles struct {
 	Total   int       `json:"total"`
 }
 
+type ArticlesPrivate struct {
+	Jwt         string `json:"jwt"`
+	ProjectUUID string `json:"project_uuid"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+}
+
 type Author struct {
 	Name    string `json:"name"`
 	Profile string `json:"profile"`
@@ -38,9 +45,7 @@ type Author struct {
 }
 
 type AuthorInput struct {
-	Name    string `json:"name"`
-	Profile string `json:"profile"`
-	Picture string `json:"picture"`
+	Name string `json:"name"`
 }
 
 type CreateArticleInfo struct {
@@ -54,21 +59,48 @@ type CreateArticleInfo struct {
 	UUID        *string   `json:"uuid"`
 	Tags        []TagData `json:"tags"`
 	Jwt         string    `json:"jwt"`
-	Project     string    `json:"project"`
-	Email       string    `json:"email"`
+	ProjectUUID string    `json:"project_uuid"`
+	Username    string    `json:"username"`
+	Password    string    `json:"password"`
 }
 
 type CreateProjectInput struct {
-	UUID   string `json:"uuid"`
-	Name   string `json:"name"`
-	Jwt    string `json:"jwt"`
-	Author string `json:"author"`
+	UUID        string `json:"uuid"`
+	Name        string `json:"name"`
+	Jwt         string `json:"jwt"`
+	Username    string `json:"username"`
+	Role        string `json:"role"`
+	Password    string `json:"password"`
+	Author      string `json:"author"`
+	Description string `json:"description"`
+}
+
+type DeleteAllArticlesInput struct {
+	Jwt         string `json:"jwt"`
+	ProjectUUID string `json:"project_uuid"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
+}
+
+type DeleteAllProjects struct {
+	Username string `json:"username"`
+	Jwt      string `json:"jwt"`
 }
 
 type DeleteBucketInfo struct {
-	UUID       *string `json:"uuid"`
-	BucketName *string `json:"bucketName"`
-	Jwt        string  `json:"jwt"`
+	UUID        *string `json:"uuid"`
+	Jwt         string  `json:"jwt"`
+	ProjectUUID string  `json:"project_uuid"`
+	Username    string  `json:"username"`
+	Password    string  `json:"password"`
+	Articlename string  `json:"articlename"`
+}
+
+type DeleteProjectType struct {
+	Jwt      string `json:"jwt"`
+	Username string `json:"username"`
+	Project  string `json:"project"`
+	UUID     string `json:"uuid"`
 }
 
 type File struct {
@@ -79,9 +111,35 @@ type File struct {
 	URL         *string         `json:"url"`
 }
 
+type FindArticlePrivateType struct {
+	Jwt         string `json:"jwt"`
+	ProjectUUID string `json:"project_uuid"`
+	Username    string `json:"username"`
+	UUID        string `json:"uuid"`
+}
+
+type FindArticlePublicType struct {
+	Project  string `json:"project"`
+	Username string `json:"username"`
+	Title    string `json:"title"`
+}
+
 type GalleryImages struct {
 	Images []Image `json:"images"`
 	Total  int     `json:"total"`
+}
+
+type GetProjectType struct {
+	Jwt      string `json:"jwt"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+type GetZincArticleInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+	Project  string `json:"project"`
+	Keyword  string `json:"keyword"`
 }
 
 type Image struct {
@@ -92,10 +150,11 @@ type Image struct {
 }
 
 type Project struct {
-	UUID     string    `json:"uuid"`
-	Name     string    `json:"name"`
-	Articles *Articles `json:"articles"`
-	Authur   string    `json:"authur"`
+	UUID        string    `json:"uuid"`
+	Name        string    `json:"name"`
+	Articles    *Articles `json:"articles"`
+	Author      string    `json:"author"`
+	Description string    `json:"description"`
 }
 
 type Projects struct {
@@ -121,6 +180,9 @@ type UpdatedArticleInfo struct {
 	UUID        *string   `json:"uuid"`
 	Tags        []TagData `json:"tags"`
 	Jwt         string    `json:"jwt"`
+	Username    string    `json:"username"`
+	ProjectUUID string    `json:"project_uuid"`
+	Password    string    `json:"password"`
 }
 
 type User struct {
@@ -131,6 +193,7 @@ type User struct {
 	Bio            string    `json:"bio"`
 	ProfileLInk    string    `json:"profileLInk"`
 	Projects       *Projects `json:"projects"`
+	Username       string    `json:"username"`
 }
 
 type UserCreation struct {
@@ -139,6 +202,7 @@ type UserCreation struct {
 	Password string `json:"password"`
 	Jwt      string `json:"jwt"`
 	Role     string `json:"role"`
+	Username string `json:"username"`
 }
 
 type Jwt struct {

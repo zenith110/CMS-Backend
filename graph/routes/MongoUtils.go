@@ -3,9 +3,9 @@ package routes
 import (
 	"context"
 	"fmt"
-	"log"
 	"os"
 
+	log "github.com/sirupsen/logrus"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
@@ -22,7 +22,6 @@ func ConnectToMongo() *mongo.Client {
 
 	// Connect to MongoDB
 	client, err := mongo.Connect(context.TODO(), clientOptions)
-
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -40,6 +39,6 @@ func CloseClientDB() {
 		log.Fatal(err)
 	}
 
-	// TODO optional you can log your closed MongoDB client
+	// Text to show the connection being closed
 	fmt.Println("Connection to MongoDB closed.")
 }

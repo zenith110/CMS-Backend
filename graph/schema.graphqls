@@ -4,24 +4,63 @@ schema {
   mutation: Mutation
 }
 type Query {
-  article(title: String!, project: String!, jwt: String!): Article
-  articles(jwt: String!, project: String!, email: String!, password: String!): Articles
-  zincarticles(keyword: String!, jwt: String!, project: String!): Articles
-  getGalleryImages(jwt: String!, email: String!): GalleryImages
-  getProjects(jwt: String!, email: String!, password: String!): Projects
+  articlePrivate(input: FindArticlePrivateType): Article
+  articlesPrivate(input: ArticlesPrivate): Articles
+  articlesPublic(input: GetZincArticleInput): Articles
+  getGalleryImages(jwt: String!, username: String!): GalleryImages
+  getProjects(input: GetProjectType): Projects
+  articlePublic(input: FindArticlePublicType): Article
 }
 type Mutation {
   createArticle(
     input: CreateArticleInfo
   ): Article!
-  updateArticle(jwt: String!, email: String!, password: String!, input: UpdatedArticleInfo): Article!
-  deleteArticle(jwt: String!, email: String!, password: String!, project: String!, input: DeleteBucketInfo): Article!
-  deleteAllArticles(jwt: String!, email: String!, password: String!, project: String!): Article!
-  createProject(jwt: String!, email: String!, password: String!, role: String!, input: CreateProjectInput): Project!
+  updateArticle(input: UpdatedArticleInfo): Article!
+  deleteArticle(input: DeleteBucketInfo): String!
+  deleteAllArticles(input: DeleteAllArticlesInput): String!
+  createProject(input: CreateProjectInput): Project!
   createUser(input: UserCreation): User
-  loginUser(email: String!, password: String!): String!
-  deleteProject(jwt: String!, email: String!, password: String!, project: String!, uuid: String!): String!
-
+  loginUser(username: String!, password: String!): String!
+  deleteProject(input: DeleteProjectType): String!
+  deleteProjects(input: DeleteAllProjects): String!
+}
+input ArticlesPrivate{
+  jwt: String!, 
+  project_uuid: String!, 
+  username: String!, 
+  password: String!
+}
+input DeleteAllProjects{
+  username: String!
+  jwt: String!
+}
+input FindArticlePrivateType{
+  jwt: String!
+  project_uuid: String!
+  username: String!
+  uuid: String!
+}
+input FindArticlePublicType{
+  project: String!
+  username: String!
+  title: String!
+}
+input DeleteProjectType{
+  jwt: String!
+  username: String!
+  project: String!
+  uuid: String!
+}
+input GetZincArticleInput{
+  username: String!
+  password: String!
+  project: String!
+  keyword: String!
+}
+input GetProjectType{
+  jwt: String!
+  username: String!
+  password: String!
 }
 input UserCreation{
   uuid: String!
@@ -29,6 +68,7 @@ input UserCreation{
   password: String!
   jwt: String!
   role: String!
+  username: String!
 }
 type User{
   email: String!
@@ -38,20 +78,34 @@ type User{
   bio: String!
   profileLInk: String!
   projects: Projects!
+  username: String!
 }
 input CreateProjectInput{
   uuid: String!
   name: String!
   jwt: String!
+  username: String!
+  role: String!
+  password: String!
   author: String!
+  description: String!
 }
 type jwt{
   token: String!
 }
+input DeleteAllArticlesInput{
+  jwt: String!
+  project_uuid: String!
+  username: String!
+  password: String!
+}
 input DeleteBucketInfo{
   uuid: String
-  bucketName: String
   jwt: String!
+  project_uuid: String!
+  username: String!
+  password: String!
+  articlename: String!
 }
 input CreateArticleInfo{
     title: String
@@ -64,8 +118,9 @@ input CreateArticleInfo{
     uuid: String
     tags: [TagData!]
     jwt: String!
-    project: String!
-    email: String!
+    project_uuid: String!
+    username: String!
+    password: String!
 }
 input File{
   name: String
@@ -89,6 +144,9 @@ input UpdatedArticleInfo{
     uuid: String
     tags: [TagData!]
     jwt: String!
+    username: String!
+    project_uuid: String!
+    password: String!
 }
 
 type Image {
@@ -101,8 +159,6 @@ type Image {
 
 input AuthorInput {
   name: String!
-  profile: String!
-  picture: String!
 }
 type GalleryImages{
   images: [Image!]!
@@ -141,7 +197,8 @@ type Project{
   uuid: String!
   name: String!
   articles: Articles!
-  authur: String!
+  author: String!
+  description: String!
 }
 type Projects{
   projects: [Project!]!

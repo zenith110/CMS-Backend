@@ -19,9 +19,11 @@ import (
 const defaultPort = "8080"
 
 func main() {
+
 	port := os.Getenv("BACKEND_PORT")
 	domain := os.Getenv("DOMAIN")
 	environment := os.Getenv("ENV")
+
 	if port == "" {
 		port = defaultPort
 	}
@@ -30,14 +32,14 @@ func main() {
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
 			AllowedOrigins:   []string{domain},
-			AllowedMethods:   []string{http.MethodGet},
+			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
 		}).Handler)
 	} else if environment == "LOCAL" {
 		router.Use(cors.New(cors.Options{
 			AllowedOrigins:   []string{"http://*"},
-			AllowedMethods:   []string{http.MethodGet},
+			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
 		}).Handler)
@@ -54,6 +56,7 @@ func main() {
 			WriteBufferSize: 1024,
 		},
 	})
+
 	// On boot, always create the default admin
 	routes.CreateDefaultAdmin()
 
