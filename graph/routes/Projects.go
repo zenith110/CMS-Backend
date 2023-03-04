@@ -11,6 +11,9 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
+/*
+Creates a AWS bucket given project paramaters
+*/
 func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
@@ -26,9 +29,15 @@ func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 		var emptyProject model.Project
 		return &emptyProject, err
 	}
-
-	return &project, nil
-
+	session := CreateAWSSession()
+	s3sc := s3.New(session)
+	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.UUID)
+	bucketExist := CheckIfBucketExist(s3sc, bucketName)
+	if bucketExist == true {
+		return &project, nil
+	}
+	CreateProjectBucket(s3sc, bucketName)
+	return &project, err
 }
 
 func GetProjects(input *model.GetProjectType) (*model.Projects, error) {
