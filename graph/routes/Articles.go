@@ -56,11 +56,13 @@ func FetchArticles(input *model.ArticlesPrivate) (*model.Articles, error) {
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
-	var err error
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	username := redisData["username"]
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	client := ConnectToMongo()
-	db := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles")
+	db := client.Database(fmt.Sprintf("%s-%s", username, input.ProjectUUID)).Collection("articles")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
@@ -92,11 +94,14 @@ func FetchArticles(input *model.ArticlesPrivate) (*model.Articles, error) {
 	return &articles, err
 }
 func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error) {
-	var err error
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	username := redisData["username"]
+	password := redisData["password"]
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	var zinc Zinc
-	data := SearchDocuments(fmt.Sprintf("%s-%s-articles", input.Username, input.Project), input.Keyword, input.Username, input.Password)
+	data := SearchDocuments(fmt.Sprintf("%s-%s-articles", username, input.Project), input.Keyword, username, password)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))
@@ -115,19 +120,22 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 
 	// var articles model.Articles
 	var articles = model.Articles{Article: articlesStorage, Total: totalArticles}
-	return &articles, err
+	return &articles, zincError
 }
 func DeleteArticles(input *model.DeleteAllArticlesInput) (string, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	username := redisData["username"]
 	client := ConnectToMongo()
-	if err := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles").Drop(context.TODO()); err != nil {
+	if err := client.Database(fmt.Sprintf("%s-%s", username, input.ProjectUUID)).Collection("articles").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
 	}
-	articlesIndex := fmt.Sprintf("%s-%s-articles", input.Username, input.ProjectUUID)
-	imagesIndex := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
+	articlesIndex := fmt.Sprintf("%s-%s-articles", username, input.ProjectUUID)
+	imagesIndex := fmt.Sprintf("%s-%s-images", username, input.ProjectUUID)
 	DeleteIndex(articlesIndex)
 	DeleteIndex(imagesIndex)
 	session := CreateAWSSession()

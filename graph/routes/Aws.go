@@ -77,7 +77,7 @@ func ProcessImages(storage map[string]any) bytes.Buffer {
 	}
 	return buffer
 }
-func UploadImage(information map[string]any) string {
+func UploadImage(information map[string]any, jwt string) string {
 	var err error
 	s3ConnectionUploader := information["s3ConnectionUploader"].(*s3manager.Uploader)
 	bucketName := information["bucketName"].(string)
@@ -105,7 +105,7 @@ func UploadImage(information map[string]any) string {
 		panic(fmt.Errorf("error has occured! %s", err))
 	}
 	image := model.Image{URL: URL, Type: contentType, Name: titleCardName, UUID: uuid.NewString()}
-	UploadImageDB(image, url, username, projectUuid)
+	UploadImageDB(image, url, jwt, projectUuid)
 
 	zincData := fmt.Sprintf(`{
 		"Url": "%s",
@@ -134,7 +134,9 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 
 	// Create S3 service client
 	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.ProjectUUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	finalImage := bytes.NewReader(finalImageBuffer.Bytes())
 
@@ -145,14 +147,14 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"URL":                  *input.URL,
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
-			"username":             input.Username,
-			"password":             input.Password,
+			"username":             redisData["username"],
+			"password":             redisData["password"],
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
 		}
 
-		return UploadImage(uploadImageMap)
+		return UploadImage(uploadImageMap, input.Jwt)
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
 		uploadImageMap := map[string]any{
@@ -161,13 +163,13 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"URL":                  *input.URL,
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
-			"username":             input.Username,
-			"password":             input.Password,
+			"username":             redisData["username"],
+			"password":             redisData["password"],
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
 		}
-		return UploadImage(uploadImageMap)
+		return UploadImage(uploadImageMap, input.Jwt)
 	}
 }
 
@@ -187,7 +189,9 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 	finalIMageBuffer := ProcessImages(storage)
 	finalImage := bytes.NewReader(finalIMageBuffer.Bytes())
 	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.ProjectUUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	if bucketExist == true {
 		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
@@ -201,7 +205,7 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", redisData["username"], input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
 		return url
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
@@ -216,7 +220,7 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", redisData["username"], input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
 		return url
 	}
 }
@@ -360,7 +364,7 @@ func DeleteAllProjectsBuckets(username string) {
 // 	}
 // 	url := "https://" + os.Getenv("BLOG_BUCKET") + ".s3." + os.Getenv("AWS_REGION") + ".amazonaws.com/" + *file.URL + "/" + *file.Name
 // 	image := model.Image{URL: url, Type: *file.ContentType, Name: *file.Name, UUID: uuid.NewString()}
-// 	UploadImageDB(image, url)
+// 	UploadImageDB(image, url,   )
 // 	uuid := uuid.New()
 // 	zincData := fmt.Sprintf(`{
 // 		"Url": "%s",

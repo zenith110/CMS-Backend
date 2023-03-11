@@ -19,11 +19,12 @@ func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
-
 	client := ConnectToMongo()
-	collection := client.Database(input.Username).Collection("projects")
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	collection := client.Database(redisData["username"]).Collection("projects")
 	var articles model.Articles
-	project := model.Project{Name: input.Name, UUID: input.UUID, Articles: &articles, Author: input.Author, Description: input.Description}
+	project := model.Project{Name: input.Name, UUID: input.UUID, Articles: &articles, Author: redisData["username"], Description: input.Description}
 	_, err := collection.InsertOne(context.TODO(), project)
 	if err != nil {
 		var emptyProject model.Project
@@ -31,7 +32,7 @@ func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 	}
 	session := CreateAWSSession()
 	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.UUID)
+	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.UUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	if bucketExist == true {
 		return &project, nil
@@ -46,10 +47,13 @@ func GetProjects(input *model.GetProjectType) (*model.Projects, error) {
 		panic("Unauthorized!")
 	}
 	var err error
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+
 	// Create a temporary array of pointers for Article
 	var projectsStorage []model.Project
 	client := ConnectToMongo()
-	db := client.Database(input.Username).Collection("projects")
+	db := client.Database(redisData["username"]).Collection("projects")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
@@ -85,30 +89,35 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
 	client := ConnectToMongo()
-	collection := client.Database(input.Username).Collection("projects")
+	collection := client.Database(redisData["username"]).Collection("projects")
 	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": input.UUID})
 	if deleteResult.DeletedCount == 0 {
 		log.Fatal("Error on deleting data ", deleteError)
 	}
 	defer CloseClientDB()
-	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.UUID)
+	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.UUID)
 	session := CreateAWSSession()
 	// Makes an s3 service client
 	s3sc := s3.New(session)
 	DeleteBucket(s3sc, bucketName)
-	return fmt.Sprintf("Deleted project %s", input.Project), deleteError
+	var err error
+	return fmt.Sprintf("Deleted project %s", input.Project), err
 }
 func DeleteProjects(input *model.DeleteAllProjects) (string, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
 	client := ConnectToMongo()
-	if err := client.Database(input.Username).Collection("projects").Drop(context.TODO()); err != nil {
+	if err := client.Database(redisData["username"]).Collection("projects").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
 	}
-	DeleteAllProjectsBuckets(input.Username)
+	DeleteAllProjectsBuckets(redisData["username"])
 	var err error
 	return "", err
 }
