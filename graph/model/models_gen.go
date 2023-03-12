@@ -49,7 +49,6 @@ type AuthorInput struct {
 type CreateArticleInfo struct {
 	Title       *string   `json:"title"`
 	TitleCard   *File     `json:"titleCard"`
-	Author      *string   `json:"author"`
 	ContentData *string   `json:"contentData"`
 	DateWritten *string   `json:"dateWritten"`
 	URL         *string   `json:"url"`
@@ -65,7 +64,6 @@ type CreateProjectInput struct {
 	Name        string `json:"name"`
 	Jwt         string `json:"jwt"`
 	Role        string `json:"role"`
-	Author      string `json:"author"`
 	Description string `json:"description"`
 }
 
@@ -83,6 +81,7 @@ type DeleteBucketInfo struct {
 	Jwt         string  `json:"jwt"`
 	ProjectUUID string  `json:"project_uuid"`
 	Articlename string  `json:"articlename"`
+	Username    string  `json:"username"`
 }
 
 type DeleteProjectType struct {
@@ -106,8 +105,8 @@ type FindArticlePrivateType struct {
 }
 
 type FindArticlePublicType struct {
-	Project string `json:"project"`
-	Title   string `json:"title"`
+	ProjectUUID string `json:"project_uuid"`
+	Title       string `json:"title"`
 }
 
 type GalleryImages struct {
@@ -120,9 +119,9 @@ type GetProjectType struct {
 }
 
 type GetZincArticleInput struct {
-	Project string `json:"project"`
-	Keyword string `json:"keyword"`
-	Jwt     string `json:"jwt"`
+	ProjectUUID string `json:"project_uuid"`
+	Keyword     string `json:"keyword"`
+	Jwt         string `json:"jwt"`
 }
 
 type Image struct {
@@ -132,12 +131,19 @@ type Image struct {
 	Name string `json:"name"`
 }
 
+type LoginData struct {
+	Jwt      string `json:"jwt"`
+	Role     string `json:"role"`
+	Username string `json:"username"`
+}
+
 type Project struct {
-	UUID        string    `json:"uuid"`
-	Name        string    `json:"name"`
-	Articles    *Articles `json:"articles"`
-	Author      string    `json:"author"`
-	Description string    `json:"description"`
+	UUID          string    `json:"uuid"`
+	Name          string    `json:"name"`
+	Articles      *Articles `json:"articles"`
+	Author        string    `json:"author"`
+	Description   string    `json:"description"`
+	EncryptionKey string    `json:"encryptionKey"`
 }
 
 type Projects struct {

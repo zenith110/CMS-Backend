@@ -136,7 +136,8 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 	s3sc := s3.New(session)
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
-	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.ProjectUUID)
+	username := redisData["username"]
+	bucketName := fmt.Sprintf("%s-%s-images", username, input.ProjectUUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	finalImage := bytes.NewReader(finalImageBuffer.Bytes())
 
@@ -147,8 +148,8 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"URL":                  *input.URL,
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
-			"username":             redisData["username"],
-			"password":             redisData["password"],
+			"username":             input.ProjectUUID,
+			"password":             fmt.Sprintf("%s-%s", input.ProjectUUID, os.Getenv("ENCRYPTIONKEY")),
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
@@ -163,8 +164,8 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"URL":                  *input.URL,
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
-			"username":             redisData["username"],
-			"password":             redisData["password"],
+			"username":             input.ProjectUUID,
+			"password":             fmt.Sprintf("%s-%s", input.ProjectUUID, os.Getenv("ENCRYPTIONKEY")),
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
@@ -191,7 +192,8 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 	s3sc := s3.New(session)
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
-	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.ProjectUUID)
+	username := redisData["username"]
+	bucketName := fmt.Sprintf("%s-%s-images", username, input.ProjectUUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	if bucketExist == true {
 		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
@@ -205,7 +207,7 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", redisData["username"], input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
 		return url
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
@@ -220,7 +222,7 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", redisData["username"], input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
 		return url
 	}
 }
@@ -264,11 +266,15 @@ func CreateProjectBucket(s3sc *s3.S3, bucketName string) {
 /*
 Deletes individual article folders within a user's project bucket
 */
-func DeleteArticleFolder(s3sc *s3.S3, iterator s3manager.BatchDeleteIterator, bucketName string) {
+func DeleteArticleFolder(s3sc *s3.S3, iterator s3manager.BatchDeleteIterator, bucketName string) error {
+	// Handle an edge case if attempting to deleting a bucket that does not exist
 	if err := s3manager.NewBatchDeleteWithClient(s3sc).Delete(context.Background(), iterator); err != nil {
-		panic(fmt.Errorf("unable to delete objects from bucket %q, %v", bucketName, err))
+		fmt.Print("Skipping, bucket does not exist!\n")
+		return err
 	}
-	fmt.Printf("Deleted object(s) from bucket: %s", bucketName)
+	fmt.Printf("Deleted object(s) from bucket: %s\n", bucketName)
+	var err error
+	return err
 }
 
 /*
@@ -279,11 +285,14 @@ func DeleteBucket(s3sc *s3.S3, bucketName string) {
 		Bucket: aws.String(bucketName),
 	})
 	// Empty the bucket before deleting
-	DeleteArticleFolder(s3sc, iter, bucketName)
+	err := DeleteArticleFolder(s3sc, iter, bucketName)
+	if err != nil {
+		return
+	}
 	// Makes an s3 service client
 	s3sc.DeleteBucket(&s3.DeleteBucketInput{
 		Bucket: aws.String(bucketName)})
-	fmt.Printf("Successfully deleted %s", bucketName)
+	fmt.Printf("Successfully deleted %s\n", bucketName)
 }
 
 /*

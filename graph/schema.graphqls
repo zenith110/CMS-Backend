@@ -20,10 +20,16 @@ type Mutation {
   deleteAllArticles(input: DeleteAllArticlesInput): String!
   createProject(input: CreateProjectInput): Project!
   createUser(input: UserCreation): User
-  loginUser(username: String!, password: String!): String!
+  loginUser(username: String!, password: String!): LoginData
   deleteProject(input: DeleteProjectType): String!
   deleteProjects(input: DeleteAllProjects): String!
   logout(jwt: String!): String!
+}
+
+type LoginData{
+  jwt: String!
+  role: String!
+  username: String!
 }
 input ArticlesPrivate{
   jwt: String!, 
@@ -38,7 +44,7 @@ input FindArticlePrivateType{
   uuid: String!
 }
 input FindArticlePublicType{
-  project: String!
+  project_uuid: String!
   title: String!
 }
 input DeleteProjectType{
@@ -47,7 +53,7 @@ input DeleteProjectType{
   uuid: String!
 }
 input GetZincArticleInput{
-  project: String!
+  project_uuid: String!
   keyword: String!
   jwt: String!
 }
@@ -89,6 +95,7 @@ input DeleteBucketInfo{
   jwt: String!
   project_uuid: String!
   articlename: String!
+  username: String!
 }
 input CreateArticleInfo{
     title: String
@@ -134,7 +141,6 @@ type Image {
   name: String!
 }
 
-
 input AuthorInput {
   name: String!
 }
@@ -177,7 +183,9 @@ type Project{
   articles: Articles!
   author: String!
   description: String!
+  encryptionKey: String!
 }
+
 type Projects{
   projects: [Project!]!
 }

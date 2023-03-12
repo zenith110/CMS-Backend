@@ -55,36 +55,7 @@ func CreateDefaultAdmin() {
 		if dbroleInserterr != nil || dbnormalInserterr != nil {
 			fmt.Printf("error is %v", dbnormalInserterr)
 		}
-		zincUsername := os.Getenv("ZINC_FIRST_ADMIN_USER")
-		zincPassword := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
-		zincBaseUrl := os.Getenv("ZINCBASE")
-		zincData := fmt.Sprintf(`{
-			"_id": "%s",
-			"name": "%s",
-			"role": "Admin",
-			"password": "%s"
-		}`, username, email, password)
-		zincDocumentUrl := fmt.Sprintf("%s/api/user", zincBaseUrl)
-		req, err := http.NewRequest("POST", zincDocumentUrl, strings.NewReader(zincData))
-		if err != nil {
-			log.Fatal(fmt.Errorf("error has occured when sending data! %v", err))
-		}
-
-		req.SetBasicAuth(zincUsername, zincPassword)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			log.Fatal(fmt.Errorf("error has occured while grabbing data! %v", err))
-		}
-		defer resp.Body.Close()
-
-		_, userCreationErr := io.ReadAll(resp.Body)
-		if userCreationErr != nil {
-			log.Fatal(fmt.Errorf("error occured while reading the data! %v", err))
-		}
-
+		CreateZincUser(username, password, email)
 	} else {
 		fmt.Printf("%s has an account associated already!!\n", os.Getenv("ADMINUSER"))
 	}
@@ -223,15 +194,15 @@ func AuthenticateReaders(username string, password string) model.User {
 @rtype - string, err
 @description - Authenticates the user, and returns a JWT.
 */
-func Login(username string, password string) (string, error) {
+func Login(username string, password string) (*model.LoginData, error) {
 	var sampleSecretKey = []byte(os.Getenv("SECRETKEY"))
 	token := jwt.New(jwt.SigningMethodHS512)
 	tokenString, err := token.SignedString(sampleSecretKey)
 	if err != nil {
 		log.Error(fmt.Sprintf("%v", err))
-		return "", err
+		panic(fmt.Sprintf("%v", err))
 	}
-	redisClient := RedisClientInstation()
+	redisLoginClient := RedisClientInstation()
 	client := ConnectToMongo()
 	collection := client.Database("blog").Collection("Users")
 	var user model.User
@@ -253,16 +224,19 @@ func Login(username string, password string) (string, error) {
 		if marshalErr != nil {
 			panic(fmt.Sprintf("error while marshling user data is: %v", err))
 		}
-		err := redisClient.Set(tokenString, userData, 0).Err()
+		err := redisLoginClient.Set(tokenString, userData, 0).Err()
 		if err != nil {
 			panic(fmt.Sprintf("error is %v", err))
 		}
-
+		redisClient := RedisClientInstation()
+		redisData := RedisUserInfo(tokenString, redisClient)
+		loginData := model.LoginData{Jwt: tokenString, Role: redisData["role"], Username: redisData["username"]}
 		defer CloseClientDB()
-		return tokenString, nil
+		return &loginData, nil
 	}
+	var loginData model.LoginData
 	defer CloseClientDB()
-	return "", nil
+	return &loginData, nil
 }
 
 /*
@@ -270,13 +244,13 @@ func Login(username string, password string) (string, error) {
 @type - string
 
 @rtype - string, err
-@description - Validates the JWT is properly signed.
+@description - Validates the JWT is properly signed within the CMS
 */
 func JWTValidityCheck(jwtToken string) (string, error) {
 	token, err := jwt.Parse(jwtToken, func(token *jwt.Token) (interface{}, error) {
 		_, ok := token.Method.(*jwt.SigningMethodHMAC)
 		if !ok {
-			return "Unauthroized!", nil
+			panic(fmt.Sprint("An error has occured in signing!"))
 		}
 		return "", nil
 	})
@@ -289,6 +263,7 @@ func JWTValidityCheck(jwtToken string) (string, error) {
 		return "Unauthorized!", nil
 	}
 }
+
 func Logout(jwt string) (string, error) {
 	redisClient := RedisClientInstation()
 	_, err := redisClient.Del(jwt).Result()

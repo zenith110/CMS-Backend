@@ -49,7 +49,7 @@ func (r *mutationResolver) CreateUser(ctx context.Context, input *model.UserCrea
 }
 
 // LoginUser is the resolver for the loginUser field.
-func (r *mutationResolver) LoginUser(ctx context.Context, username string, password string) (string, error) {
+func (r *mutationResolver) LoginUser(ctx context.Context, username string, password string) (*model.LoginData, error) {
 	jwt, err := routes.Login(username, password)
 	return jwt, err
 }

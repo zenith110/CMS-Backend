@@ -53,16 +53,16 @@ type Total struct {
 
 func FetchArticles(input *model.ArticlesPrivate) (*model.Articles, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
-	if message == "Unauthorized!" {
-		panic("Unauthorized!")
-	}
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
-	username := redisData["username"]
+	if message == "Unauthorized!" || redisData["role"] == "Reader" {
+		panic("Unauthorized!")
+	}
+
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	client := ConnectToMongo()
-	db := client.Database(fmt.Sprintf("%s-%s", username, input.ProjectUUID)).Collection("articles")
+	db := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
@@ -94,6 +94,10 @@ func FetchArticles(input *model.ArticlesPrivate) (*model.Articles, error) {
 	return &articles, err
 }
 func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
+	if message == "Unauthorized!" {
+		panic(fmt.Sprint("This JWT is invalid!!"))
+	}
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
 	username := redisData["username"]
@@ -101,7 +105,7 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	var zinc Zinc
-	data := SearchDocuments(fmt.Sprintf("%s-%s-articles", username, input.Project), input.Keyword, username, password)
+	data := SearchDocuments(fmt.Sprintf("%s-articles", input.ProjectUUID), input.Keyword, username, password)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))
@@ -127,17 +131,22 @@ func DeleteArticles(input *model.DeleteAllArticlesInput) (string, error) {
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
+
+	client := ConnectToMongo()
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
-	username := redisData["username"]
-	client := ConnectToMongo()
-	if err := client.Database(fmt.Sprintf("%s-%s", username, input.ProjectUUID)).Collection("articles").Drop(context.TODO()); err != nil {
-		log.Fatal(err)
+	role := redisData["role"]
+	if role == "Admin" {
+		if err := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles").Drop(context.TODO()); err != nil {
+			log.Fatal(err)
+		}
 	}
-	articlesIndex := fmt.Sprintf("%s-%s-articles", username, input.ProjectUUID)
-	imagesIndex := fmt.Sprintf("%s-%s-images", username, input.ProjectUUID)
-	DeleteIndex(articlesIndex)
-	DeleteIndex(imagesIndex)
+
+	articlesIndex := fmt.Sprintf("%s-%s-articles", redisData["username"], input.ProjectUUID)
+	imagesIndex := fmt.Sprintf("%s-%s-images", redisData["username"], input.ProjectUUID)
+	zincusername, password := ZincLogin(input.ProjectUUID)
+	DeleteIndex(articlesIndex, zincusername, password)
+	DeleteIndex(imagesIndex, zincusername, password)
 	session := CreateAWSSession()
 	s3sc := s3.New(session)
 	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{

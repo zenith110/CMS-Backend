@@ -3,6 +3,7 @@ package routes
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	log "github.com/sirupsen/logrus"
@@ -16,15 +17,15 @@ Creates a AWS bucket given project paramaters
 */
 func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
-	if message == "Unauthorized!" {
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	if message == "Unauthorized!" || redisData["role"] == "Reader" {
 		panic("Unauthorized!")
 	}
 	client := ConnectToMongo()
-	redisClient := RedisClientInstation()
-	redisData := RedisUserInfo(input.Jwt, redisClient)
 	collection := client.Database(redisData["username"]).Collection("projects")
 	var articles model.Articles
-	project := model.Project{Name: input.Name, UUID: input.UUID, Articles: &articles, Author: redisData["username"], Description: input.Description}
+	project := model.Project{Name: input.Name, UUID: input.UUID, Articles: &articles, Author: redisData["username"], Description: input.Description, EncryptionKey: os.Getenv("ENCRYPTIONKEY")}
 	_, err := collection.InsertOne(context.TODO(), project)
 	if err != nil {
 		var emptyProject model.Project
@@ -38,19 +39,20 @@ func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 		return &project, nil
 	}
 	CreateProjectBucket(s3sc, bucketName)
+	CreateZincUser(input.UUID, fmt.Sprintf("%s-%s", input.UUID, os.Getenv("ENCRYPTIONKEY")), "")
 	return &project, err
 }
 
 func GetProjects(input *model.GetProjectType) (*model.Projects, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
-	if message == "Unauthorized!" {
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	if message == "Unauthorized!" || redisData["role"] == "Reader" {
 		panic("Unauthorized!")
 	}
 	var err error
-	redisClient := RedisClientInstation()
-	redisData := RedisUserInfo(input.Jwt, redisClient)
 
-	// Create a temporary array of pointers for Article
+	// Create a temporary array of pointers for projects
 	var projectsStorage []model.Project
 	client := ConnectToMongo()
 	db := client.Database(redisData["username"]).Collection("projects")
@@ -86,11 +88,12 @@ func GetProjects(input *model.GetProjectType) (*model.Projects, error) {
 }
 func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
-	if message == "Unauthorized!" {
-		panic("Unauthorized!")
-	}
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
+	if message == "Unauthorized!" || redisData["role"] != "Admin" {
+		panic("User cannot perform this action!")
+	}
+	username, password := ZincLogin(input.UUID)
 	client := ConnectToMongo()
 	collection := client.Database(redisData["username"]).Collection("projects")
 	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": input.UUID})
@@ -102,10 +105,16 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	session := CreateAWSSession()
 	// Makes an s3 service client
 	s3sc := s3.New(session)
+	zincData := fmt.Sprintf(`{
+		"UUID":        "%s"
+	}`, input.UUID)
 	DeleteBucket(s3sc, bucketName)
+	DeleteDocument(bucketName, zincData, input.UUID, username, password)
+	DeleteZincUser(input.UUID, username, password)
 	var err error
 	return fmt.Sprintf("Deleted project %s", input.Project), err
 }
+
 func DeleteProjects(input *model.DeleteAllProjects) (string, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
