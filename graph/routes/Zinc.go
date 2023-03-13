@@ -39,7 +39,6 @@ func CreateDocument(index string, data string, uuid string, userName string, pas
 
 }
 func UpdateDocument(index string, data string, uuid string, userName string, password string) {
-
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_update/%s", zincBaseUrl, index, uuid)
 

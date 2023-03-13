@@ -128,7 +128,7 @@ type ComplexityRoot struct {
 	}
 
 	Tag struct {
-		Language func(childComplexity int) int
+		Tag func(childComplexity int) int
 	}
 
 	User struct {
@@ -603,12 +603,12 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Query.__resolve__service(childComplexity), true
 
-	case "Tag.language":
-		if e.complexity.Tag.Language == nil {
+	case "Tag.tag":
+		if e.complexity.Tag.Tag == nil {
 			break
 		}
 
-		return e.complexity.Tag.Language(childComplexity), true
+		return e.complexity.Tag.Tag(childComplexity), true
 
 	case "User.bio":
 		if e.complexity.User.Bio == nil {
@@ -1505,8 +1505,8 @@ func (ec *executionContext) fieldContext_Article_tags(ctx context.Context, field
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "language":
-				return ec.fieldContext_Tag_language(ctx, field)
+			case "tag":
+				return ec.fieldContext_Tag_tag(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Tag", field.Name)
 		},
@@ -3707,8 +3707,8 @@ func (ec *executionContext) fieldContext_Query___schema(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Tag_language(ctx context.Context, field graphql.CollectedField, obj *model.Tag) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Tag_language(ctx, field)
+func (ec *executionContext) _Tag_tag(ctx context.Context, field graphql.CollectedField, obj *model.Tag) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Tag_tag(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -3721,7 +3721,7 @@ func (ec *executionContext) _Tag_language(ctx context.Context, field graphql.Col
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.Language, nil
+		return obj.Tag, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -3738,7 +3738,7 @@ func (ec *executionContext) _Tag_language(ctx context.Context, field graphql.Col
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Tag_language(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Tag_tag(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Tag",
 		Field:      field,
@@ -6632,7 +6632,7 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt", "project_uuid"}
+	fieldsInOrder := [...]string{"title", "titleCard", "author", "contentData", "dateWritten", "url", "description", "uuid", "tags", "jwt", "project_uuid", "originalfoldername"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -6724,6 +6724,14 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
 			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "originalfoldername":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("originalfoldername"))
+			it.Originalfoldername, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7508,9 +7516,9 @@ func (ec *executionContext) _Tag(ctx context.Context, sel ast.SelectionSet, obj 
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Tag")
-		case "language":
+		case "tag":
 
-			out.Values[i] = ec._Tag_language(ctx, field, obj)
+			out.Values[i] = ec._Tag_tag(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

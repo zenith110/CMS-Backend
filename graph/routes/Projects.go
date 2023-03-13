@@ -33,7 +33,8 @@ func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 	}
 	session := CreateAWSSession()
 	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.UUID)
+	zincusername, _ := ZincLogin(input.UUID)
+	bucketName := fmt.Sprintf("%s-images", zincusername)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	if bucketExist == true {
 		return &project, nil
@@ -101,7 +102,7 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 		log.Fatal("Error on deleting data ", deleteError)
 	}
 	defer CloseClientDB()
-	bucketName := fmt.Sprintf("%s-%s-images", redisData["username"], input.UUID)
+	bucketName := fmt.Sprintf("%s-images", username)
 	session := CreateAWSSession()
 	// Makes an s3 service client
 	s3sc := s3.New(session)

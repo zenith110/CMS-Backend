@@ -132,6 +132,7 @@ input UpdatedArticleInfo{
     tags: [TagData!]
     jwt: String!
     project_uuid: String!
+    originalfoldername: String!
 }
 
 type Image {
@@ -175,7 +176,7 @@ type Articles {
   total: Int!
 }
 type Tag {
-  language: String!
+  tag: String!
 }
 type Project{
   uuid: String!

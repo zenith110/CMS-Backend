@@ -151,7 +151,7 @@ type Projects struct {
 }
 
 type Tag struct {
-	Language string `json:"language"`
+	Tag string `json:"tag"`
 }
 
 type TagData struct {
@@ -159,17 +159,18 @@ type TagData struct {
 }
 
 type UpdatedArticleInfo struct {
-	Title       *string   `json:"title"`
-	TitleCard   *File     `json:"titleCard"`
-	Author      *string   `json:"author"`
-	ContentData *string   `json:"contentData"`
-	DateWritten *string   `json:"dateWritten"`
-	URL         *string   `json:"url"`
-	Description *string   `json:"description"`
-	UUID        *string   `json:"uuid"`
-	Tags        []TagData `json:"tags"`
-	Jwt         string    `json:"jwt"`
-	ProjectUUID string    `json:"project_uuid"`
+	Title              *string   `json:"title"`
+	TitleCard          *File     `json:"titleCard"`
+	Author             *string   `json:"author"`
+	ContentData        *string   `json:"contentData"`
+	DateWritten        *string   `json:"dateWritten"`
+	URL                *string   `json:"url"`
+	Description        *string   `json:"description"`
+	UUID               *string   `json:"uuid"`
+	Tags               []TagData `json:"tags"`
+	Jwt                string    `json:"jwt"`
+	ProjectUUID        string    `json:"project_uuid"`
+	Originalfoldername string    `json:"originalfoldername"`
 }
 
 type User struct {

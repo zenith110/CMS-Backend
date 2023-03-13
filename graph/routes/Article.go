@@ -31,7 +31,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
 		tag := model.Tag{
-			Language: *input.Tags[tagData].Name,
+			Tag: *input.Tags[tagData].Name,
 		}
 		tags = append(tags, tag)
 		tagsString = append(tagsString, *input.Tags[tagData].Name)
@@ -65,7 +65,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	log.WithFields(log.Fields{
 		"article state": "created mongodb instance",
 	}).Info("Article has been created, inserting into zinc!")
-	CreateDocument(fmt.Sprintf("%s-articles", input.ProjectUUID), zincData, input.ProjectUUID, zincUsername, zincPassword)
+	CreateDocument(fmt.Sprintf("%s-articles", zincUsername), zincData, input.ProjectUUID, zincUsername, zincPassword)
 	log.WithFields(log.Fields{
 		"article state": "finished insertion",
 	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
@@ -86,7 +86,7 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (string, error) {
 		collection := client.Database(fmt.Sprintf("%s", bucket.ProjectUUID)).Collection("articles")
 		session := CreateAWSSession()
 		s3sc := s3.New(session)
-		bucketName := fmt.Sprintf("%s-%s-images", username, bucket.ProjectUUID)
+		bucketName := fmt.Sprintf("%s-images", zincusername)
 		iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
 			Bucket: aws.String(bucketName),
 			Prefix: &bucket.Articlename,
@@ -101,7 +101,7 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (string, error) {
 			"UUID":        "%s"
 		}`, *bucket.UUID)
 
-		DeleteDocument(fmt.Sprintf("%s-%s-articles", username, bucket.ProjectUUID), zincData, bucket.ProjectUUID, zincusername, password)
+		DeleteDocument(fmt.Sprintf("%s-articles", zincusername), zincData, bucket.ProjectUUID, zincusername, password)
 		return "successful", deleteError
 	}
 	var err error
@@ -129,15 +129,26 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
+	username, _ := ZincLogin(input.ProjectUUID)
 	if message == "Unauthorized!" || redisData["role"] == "Reader" {
 		panic("Unauthorized!")
 	}
-	username, password := ZincLogin(input.ProjectUUID)
+	bucketName := fmt.Sprintf("%s-images", username)
+	session := CreateAWSSession()
+	s3sc := s3.New(session)
+	fmt.Print(input.Originalfoldername)
+	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+		Bucket: aws.String(bucketName),
+		Prefix: &input.Originalfoldername,
+	})
+
+	DeleteArticleFolder(s3sc, iter, bucketName)
+	// zincusername, password := ZincLogin(input.ProjectUUID)
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
 		tag := model.Tag{
-			Language: *input.Tags[tagData].Name,
+			Tag: *input.Tags[tagData].Name,
 		}
 		tags = append(tags, tag)
 		tagsString = append(tagsString, *input.Tags[tagData].Name)
@@ -148,7 +159,7 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 
 	filter := bson.M{"uuid": input.UUID}
 	update := bson.D{primitive.E{Key: "$set", Value: bson.D{
-		primitive.E{Key: "title", Value: *input.Title}, primitive.E{Key: "TitleCard", Value: imageURL}, primitive.E{Key: "contentData", Value: *input.ContentData}, primitive.E{Key: "URL", Value: *input.URL}, primitive.E{Key: "Description", Value: input.Description}, primitive.E{Key: "tags", Value: tags},
+		primitive.E{Key: "uuid", Value: input.UUID}, primitive.E{Key: "TitleCard", Value: imageURL}, primitive.E{Key: "contentData", Value: *input.ContentData}, primitive.E{Key: "URL", Value: *input.URL}, primitive.E{Key: "Description", Value: input.Description}, primitive.E{Key: "tags", Value: tags}, primitive.E{Key: "title", Value: input.Title},
 	}}}
 	var article model.Article
 	_, ArticleUpdateerr := collection.UpdateOne(
@@ -160,17 +171,17 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 		panic(fmt.Errorf("error has occured: %v", ArticleUpdateerr))
 	}
 
-	zincData := fmt.Sprintf(`{
-		"Title":       "%s",
-		"Author":      "%s",
-		"ContentData": "%s",
-		"DateWritten": "%s",
-		"Url":         "%s",
-		"Description": "%s",
-		"UUID":        "%s",
-		"TitleCard":   "%s",
-		"Tags":        "%s"
-	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
-	UpdateDocument(fmt.Sprintf("%s-articles", input.ProjectUUID), zincData, *input.UUID, username, password)
+	// zincData := fmt.Sprintf(`{
+	// 	"Title":       "%s",
+	// 	"Author":      "%s",
+	// 	"ContentData": "%s",
+	// 	"DateWritten": "%s",
+	// 	"Url":         "%s",
+	// 	"Description": "%s",
+	// 	"UUID":        "%s",
+	// 	"TitleCard":   "%s",
+	// 	"Tags":        "%s"
+	// }`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
+	// UpdateDocument(fmt.Sprintf("%s-articles", zincusername), zincData, *input.UUID, zincusername, password)
 	return &article, ArticleUpdateerr
 }
