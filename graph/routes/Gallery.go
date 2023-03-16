@@ -16,9 +16,11 @@ import (
 // 	return UploadToGallery(file), err
 // }
 
-func UploadImageDB(image model.Image, url string, username string, project string) (model.Image, error) {
+func UploadImageDB(image model.Image, url string, jwt string, uuid string) (model.Image, error) {
 	client := ConnectToMongo()
-	collection := client.Database(username).Collection("images")
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(jwt, redisClient)
+	collection := client.Database(fmt.Sprintf("%s-%s", redisData["username"], uuid)).Collection("images")
 	res, err := collection.InsertOne(context.TODO(), image)
 	if err != nil {
 		log.Fatal(err)
@@ -29,7 +31,7 @@ func UploadImageDB(image model.Image, url string, username string, project strin
 	defer CloseClientDB()
 	return image, err
 }
-func GalleryFindImages(jwt string, username string) (*model.GalleryImages, error) {
+func GalleryFindImages(jwt string) (*model.GalleryImages, error) {
 	message, _ := JWTValidityCheck(jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
@@ -37,8 +39,10 @@ func GalleryFindImages(jwt string, username string) (*model.GalleryImages, error
 	var err error
 	// Create a temporary array of pointers for Article
 	var imagesStorage []model.Image
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(jwt, redisClient)
 	client := ConnectToMongo()
-	db := client.Database(username).Collection("images")
+	db := client.Database(redisData["username"]).Collection("images")
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)

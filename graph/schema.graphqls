@@ -7,7 +7,7 @@ type Query {
   articlePrivate(input: FindArticlePrivateType): Article
   articlesPrivate(input: ArticlesPrivate): Articles
   articlesPublic(input: GetZincArticleInput): Articles
-  getGalleryImages(jwt: String!, username: String!): GalleryImages
+  getGalleryImages(jwt: String!, ): GalleryImages
   getProjects(input: GetProjectType): Projects
   articlePublic(input: FindArticlePublicType): Article
 }
@@ -20,55 +20,51 @@ type Mutation {
   deleteAllArticles(input: DeleteAllArticlesInput): String!
   createProject(input: CreateProjectInput): Project!
   createUser(input: UserCreation): User
-  loginUser(username: String!, password: String!): String!
+  loginUser(username: String!, password: String!): LoginData
   deleteProject(input: DeleteProjectType): String!
   deleteProjects(input: DeleteAllProjects): String!
+  logout(jwt: String!): String!
+}
+
+type LoginData{
+  jwt: String!
+  role: String!
+  username: String!
 }
 input ArticlesPrivate{
   jwt: String!, 
-  project_uuid: String!, 
-  username: String!, 
-  password: String!
+  project_uuid: String!
 }
 input DeleteAllProjects{
-  username: String!
   jwt: String!
 }
 input FindArticlePrivateType{
   jwt: String!
   project_uuid: String!
-  username: String!
   uuid: String!
 }
 input FindArticlePublicType{
-  project: String!
-  username: String!
+  project_uuid: String!
   title: String!
 }
 input DeleteProjectType{
   jwt: String!
-  username: String!
   project: String!
   uuid: String!
 }
 input GetZincArticleInput{
-  username: String!
-  password: String!
-  project: String!
+  project_uuid: String!
   keyword: String!
+  jwt: String!
 }
 input GetProjectType{
   jwt: String!
-  username: String!
-  password: String!
 }
 input UserCreation{
   uuid: String!
   email: String!
-  password: String!
   jwt: String!
   role: String!
-  username: String!
 }
 type User{
   email: String!
@@ -84,10 +80,7 @@ input CreateProjectInput{
   uuid: String!
   name: String!
   jwt: String!
-  username: String!
   role: String!
-  password: String!
-  author: String!
   description: String!
 }
 type jwt{
@@ -96,21 +89,17 @@ type jwt{
 input DeleteAllArticlesInput{
   jwt: String!
   project_uuid: String!
-  username: String!
-  password: String!
 }
 input DeleteBucketInfo{
   uuid: String
   jwt: String!
   project_uuid: String!
-  username: String!
-  password: String!
   articlename: String!
+  username: String!
 }
 input CreateArticleInfo{
     title: String
     titleCard: File
-    author: String
     contentData: String
     dateWritten: String
     url: String
@@ -119,8 +108,6 @@ input CreateArticleInfo{
     tags: [TagData!]
     jwt: String!
     project_uuid: String!
-    username: String!
-    password: String!
 }
 input File{
   name: String
@@ -144,9 +131,8 @@ input UpdatedArticleInfo{
     uuid: String
     tags: [TagData!]
     jwt: String!
-    username: String!
     project_uuid: String!
-    password: String!
+    originalfoldername: String!
 }
 
 type Image {
@@ -155,7 +141,6 @@ type Image {
   type: String!
   name: String!
 }
-
 
 input AuthorInput {
   name: String!
@@ -191,7 +176,7 @@ type Articles {
   total: Int!
 }
 type Tag {
-  language: String!
+  tag: String!
 }
 type Project{
   uuid: String!
@@ -199,7 +184,9 @@ type Project{
   articles: Articles!
   author: String!
   description: String!
+  encryptionKey: String!
 }
+
 type Projects{
   projects: [Project!]!
 }

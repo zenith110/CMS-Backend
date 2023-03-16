@@ -77,7 +77,7 @@ func ProcessImages(storage map[string]any) bytes.Buffer {
 	}
 	return buffer
 }
-func UploadImage(information map[string]any) string {
+func UploadImage(information map[string]any, jwt string) string {
 	var err error
 	s3ConnectionUploader := information["s3ConnectionUploader"].(*s3manager.Uploader)
 	bucketName := information["bucketName"].(string)
@@ -100,12 +100,13 @@ func UploadImage(information map[string]any) string {
 	if err != nil {
 		panic(fmt.Errorf("error has occured in uploading! %s", err))
 	}
+
 	url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", username, projectUuid, os.Getenv("AWS_REGION"), URL, titleCardName)
 	if err != nil {
 		panic(fmt.Errorf("error has occured! %s", err))
 	}
 	image := model.Image{URL: URL, Type: contentType, Name: titleCardName, UUID: uuid.NewString()}
-	UploadImageDB(image, url, username, projectUuid)
+	UploadImageDB(image, url, jwt, projectUuid)
 
 	zincData := fmt.Sprintf(`{
 		"Url": "%s",
@@ -134,7 +135,11 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 
 	// Create S3 service client
 	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	username := redisData["username"]
+	zincusername, _ := ZincLogin(input.ProjectUUID)
+	bucketName := fmt.Sprintf("%s-images", zincusername)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	finalImage := bytes.NewReader(finalImageBuffer.Bytes())
 
@@ -145,14 +150,14 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"URL":                  *input.URL,
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
-			"username":             input.Username,
-			"password":             input.Password,
+			"username":             username,
+			"password":             fmt.Sprintf("%s-%s", input.ProjectUUID, os.Getenv("ENCRYPTIONKEY")),
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
 		}
 
-		return UploadImage(uploadImageMap)
+		return UploadImage(uploadImageMap, input.Jwt)
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
 		uploadImageMap := map[string]any{
@@ -161,13 +166,13 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"URL":                  *input.URL,
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
-			"username":             input.Username,
-			"password":             input.Password,
+			"username":             input.ProjectUUID,
+			"password":             fmt.Sprintf("%s-%s", input.ProjectUUID, os.Getenv("ENCRYPTIONKEY")),
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
 		}
-		return UploadImage(uploadImageMap)
+		return UploadImage(uploadImageMap, input.Jwt)
 	}
 }
 
@@ -184,10 +189,11 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		"imageContentType": *input.TitleCard.ContentType,
 		"srcImage":         srcImage,
 	}
-	finalIMageBuffer := ProcessImages(storage)
-	finalImage := bytes.NewReader(finalIMageBuffer.Bytes())
+	finalImageBuffer := ProcessImages(storage)
+	finalImage := bytes.NewReader(finalImageBuffer.Bytes())
 	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-%s-images", input.Username, input.ProjectUUID)
+	zincusername, _ := ZincLogin(input.ProjectUUID)
+	bucketName := fmt.Sprintf("%s-images", zincusername)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
 	if bucketExist == true {
 		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
@@ -201,7 +207,7 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		url := fmt.Sprintf("https://%s-images.s3.%s.amazonaws.com/%s/%s", zincusername, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
 		return url
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
@@ -216,7 +222,7 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-%s-%s-images.s3.%s.amazonaws.com/%s/%s", input.Username, input.ProjectUUID, *input.UUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		url := fmt.Sprintf("https://%s-images.s3.%s.amazonaws.com/%s/%s", zincusername, input.ProjectUUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
 		return url
 	}
 }
@@ -260,11 +266,15 @@ func CreateProjectBucket(s3sc *s3.S3, bucketName string) {
 /*
 Deletes individual article folders within a user's project bucket
 */
-func DeleteArticleFolder(s3sc *s3.S3, iterator s3manager.BatchDeleteIterator, bucketName string) {
+func DeleteArticleFolder(s3sc *s3.S3, iterator s3manager.BatchDeleteIterator, bucketName string) error {
+	// Handle an edge case if attempting to deleting a bucket that does not exist
 	if err := s3manager.NewBatchDeleteWithClient(s3sc).Delete(context.Background(), iterator); err != nil {
-		panic(fmt.Errorf("unable to delete objects from bucket %q, %v", bucketName, err))
+		fmt.Print("Skipping, bucket does not exist!\n")
+		return err
 	}
-	fmt.Printf("Deleted object(s) from bucket: %s", bucketName)
+	fmt.Printf("Deleted object(s) from bucket: %s\n", bucketName)
+	var err error
+	return err
 }
 
 /*
@@ -275,11 +285,14 @@ func DeleteBucket(s3sc *s3.S3, bucketName string) {
 		Bucket: aws.String(bucketName),
 	})
 	// Empty the bucket before deleting
-	DeleteArticleFolder(s3sc, iter, bucketName)
+	err := DeleteArticleFolder(s3sc, iter, bucketName)
+	if err != nil {
+		return
+	}
 	// Makes an s3 service client
 	s3sc.DeleteBucket(&s3.DeleteBucketInput{
 		Bucket: aws.String(bucketName)})
-	fmt.Printf("Successfully deleted %s", bucketName)
+	fmt.Printf("Successfully deleted %s\n", bucketName)
 }
 
 /*
@@ -295,7 +308,7 @@ func DeleteAllProjectsBuckets(username string) {
 	}
 
 	for _, b := range result.Buckets {
-		if strings.Contains(*b.Name, username) {
+		if strings.Contains(*b.Name, "images") {
 			DeleteBucket(s3sc, *b.Name)
 		}
 		continue
@@ -360,7 +373,7 @@ func DeleteAllProjectsBuckets(username string) {
 // 	}
 // 	url := "https://" + os.Getenv("BLOG_BUCKET") + ".s3." + os.Getenv("AWS_REGION") + ".amazonaws.com/" + *file.URL + "/" + *file.Name
 // 	image := model.Image{URL: url, Type: *file.ContentType, Name: *file.Name, UUID: uuid.NewString()}
-// 	UploadImageDB(image, url)
+// 	UploadImageDB(image, url,   )
 // 	uuid := uuid.New()
 // 	zincData := fmt.Sprintf(`{
 // 		"Url": "%s",

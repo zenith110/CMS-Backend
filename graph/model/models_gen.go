@@ -34,8 +34,6 @@ type Articles struct {
 type ArticlesPrivate struct {
 	Jwt         string `json:"jwt"`
 	ProjectUUID string `json:"project_uuid"`
-	Username    string `json:"username"`
-	Password    string `json:"password"`
 }
 
 type Author struct {
@@ -51,7 +49,6 @@ type AuthorInput struct {
 type CreateArticleInfo struct {
 	Title       *string   `json:"title"`
 	TitleCard   *File     `json:"titleCard"`
-	Author      *string   `json:"author"`
 	ContentData *string   `json:"contentData"`
 	DateWritten *string   `json:"dateWritten"`
 	URL         *string   `json:"url"`
@@ -60,47 +57,37 @@ type CreateArticleInfo struct {
 	Tags        []TagData `json:"tags"`
 	Jwt         string    `json:"jwt"`
 	ProjectUUID string    `json:"project_uuid"`
-	Username    string    `json:"username"`
-	Password    string    `json:"password"`
 }
 
 type CreateProjectInput struct {
 	UUID        string `json:"uuid"`
 	Name        string `json:"name"`
 	Jwt         string `json:"jwt"`
-	Username    string `json:"username"`
 	Role        string `json:"role"`
-	Password    string `json:"password"`
-	Author      string `json:"author"`
 	Description string `json:"description"`
 }
 
 type DeleteAllArticlesInput struct {
 	Jwt         string `json:"jwt"`
 	ProjectUUID string `json:"project_uuid"`
-	Username    string `json:"username"`
-	Password    string `json:"password"`
 }
 
 type DeleteAllProjects struct {
-	Username string `json:"username"`
-	Jwt      string `json:"jwt"`
+	Jwt string `json:"jwt"`
 }
 
 type DeleteBucketInfo struct {
 	UUID        *string `json:"uuid"`
 	Jwt         string  `json:"jwt"`
 	ProjectUUID string  `json:"project_uuid"`
-	Username    string  `json:"username"`
-	Password    string  `json:"password"`
 	Articlename string  `json:"articlename"`
+	Username    string  `json:"username"`
 }
 
 type DeleteProjectType struct {
-	Jwt      string `json:"jwt"`
-	Username string `json:"username"`
-	Project  string `json:"project"`
-	UUID     string `json:"uuid"`
+	Jwt     string `json:"jwt"`
+	Project string `json:"project"`
+	UUID    string `json:"uuid"`
 }
 
 type File struct {
@@ -114,14 +101,12 @@ type File struct {
 type FindArticlePrivateType struct {
 	Jwt         string `json:"jwt"`
 	ProjectUUID string `json:"project_uuid"`
-	Username    string `json:"username"`
 	UUID        string `json:"uuid"`
 }
 
 type FindArticlePublicType struct {
-	Project  string `json:"project"`
-	Username string `json:"username"`
-	Title    string `json:"title"`
+	ProjectUUID string `json:"project_uuid"`
+	Title       string `json:"title"`
 }
 
 type GalleryImages struct {
@@ -130,16 +115,13 @@ type GalleryImages struct {
 }
 
 type GetProjectType struct {
-	Jwt      string `json:"jwt"`
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Jwt string `json:"jwt"`
 }
 
 type GetZincArticleInput struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
-	Project  string `json:"project"`
-	Keyword  string `json:"keyword"`
+	ProjectUUID string `json:"project_uuid"`
+	Keyword     string `json:"keyword"`
+	Jwt         string `json:"jwt"`
 }
 
 type Image struct {
@@ -149,12 +131,19 @@ type Image struct {
 	Name string `json:"name"`
 }
 
+type LoginData struct {
+	Jwt      string `json:"jwt"`
+	Role     string `json:"role"`
+	Username string `json:"username"`
+}
+
 type Project struct {
-	UUID        string    `json:"uuid"`
-	Name        string    `json:"name"`
-	Articles    *Articles `json:"articles"`
-	Author      string    `json:"author"`
-	Description string    `json:"description"`
+	UUID          string    `json:"uuid"`
+	Name          string    `json:"name"`
+	Articles      *Articles `json:"articles"`
+	Author        string    `json:"author"`
+	Description   string    `json:"description"`
+	EncryptionKey string    `json:"encryptionKey"`
 }
 
 type Projects struct {
@@ -162,7 +151,7 @@ type Projects struct {
 }
 
 type Tag struct {
-	Language string `json:"language"`
+	Tag string `json:"tag"`
 }
 
 type TagData struct {
@@ -170,19 +159,18 @@ type TagData struct {
 }
 
 type UpdatedArticleInfo struct {
-	Title       *string   `json:"title"`
-	TitleCard   *File     `json:"titleCard"`
-	Author      *string   `json:"author"`
-	ContentData *string   `json:"contentData"`
-	DateWritten *string   `json:"dateWritten"`
-	URL         *string   `json:"url"`
-	Description *string   `json:"description"`
-	UUID        *string   `json:"uuid"`
-	Tags        []TagData `json:"tags"`
-	Jwt         string    `json:"jwt"`
-	Username    string    `json:"username"`
-	ProjectUUID string    `json:"project_uuid"`
-	Password    string    `json:"password"`
+	Title              *string   `json:"title"`
+	TitleCard          *File     `json:"titleCard"`
+	Author             *string   `json:"author"`
+	ContentData        *string   `json:"contentData"`
+	DateWritten        *string   `json:"dateWritten"`
+	URL                *string   `json:"url"`
+	Description        *string   `json:"description"`
+	UUID               *string   `json:"uuid"`
+	Tags               []TagData `json:"tags"`
+	Jwt                string    `json:"jwt"`
+	ProjectUUID        string    `json:"project_uuid"`
+	Originalfoldername string    `json:"originalfoldername"`
 }
 
 type User struct {
@@ -197,12 +185,10 @@ type User struct {
 }
 
 type UserCreation struct {
-	UUID     string `json:"uuid"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
-	Jwt      string `json:"jwt"`
-	Role     string `json:"role"`
-	Username string `json:"username"`
+	UUID  string `json:"uuid"`
+	Email string `json:"email"`
+	Jwt   string `json:"jwt"`
+	Role  string `json:"role"`
 }
 
 type Jwt struct {

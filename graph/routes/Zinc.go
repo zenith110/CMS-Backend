@@ -39,7 +39,6 @@ func CreateDocument(index string, data string, uuid string, userName string, pas
 
 }
 func UpdateDocument(index string, data string, uuid string, userName string, password string) {
-
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_update/%s", zincBaseUrl, index, uuid)
 
@@ -82,7 +81,7 @@ func DeleteDocument(index string, data string, uuid string, userName string, pas
 		log.Fatal(err)
 	}
 	defer resp.Body.Close()
-	log.Println(resp.StatusCode)
+
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatal(err)
@@ -129,10 +128,8 @@ func SearchDocuments(indexName string, searchTerm string, userName string, passw
 
 	return body
 }
-func DeleteIndex(index string) {
+func DeleteIndex(index string, username string, password string) {
 	data := ""
-	userName := os.Getenv("ZINC_FIRST_ADMIN_USER")
-	password := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
 
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/index/%s", zincBaseUrl, index)
@@ -141,7 +138,7 @@ func DeleteIndex(index string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	req.SetBasicAuth(userName, password)
+	req.SetBasicAuth(username, password)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
 
@@ -158,4 +155,60 @@ func DeleteIndex(index string) {
 	log.WithFields(log.Fields{
 		"article state": "Returning response",
 	}).Info(fmt.Sprintf("Article data: %s", string(body)))
+}
+
+func ZincLogin(uuid string) (string, string) {
+	username := uuid
+	password := fmt.Sprintf("%s-%s", uuid, os.Getenv("ENCRYPTIONKEY"))
+	return username, password
+}
+
+func CreateZincUser(username string, password string, email string) {
+	zincUsername := os.Getenv("ZINC_FIRST_ADMIN_USER")
+	zincPassword := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
+	zincBaseUrl := os.Getenv("ZINCBASE")
+	zincData := fmt.Sprintf(`{
+			"_id": "%s",
+			"name": "%s",
+			"role": "Admin",
+			"password": "%s"
+		}`, username, email, password)
+	zincDocumentUrl := fmt.Sprintf("%s/api/user", zincBaseUrl)
+	req, err := http.NewRequest("POST", zincDocumentUrl, strings.NewReader(zincData))
+	if err != nil {
+		log.Fatal(fmt.Errorf("error has occured when sending data! %v", err))
+	}
+
+	req.SetBasicAuth(zincUsername, zincPassword)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(fmt.Errorf("error has occured while grabbing data! %v", err))
+	}
+	defer resp.Body.Close()
+
+	_, userCreationErr := io.ReadAll(resp.Body)
+	if userCreationErr != nil {
+		log.Fatal(fmt.Errorf("error occured while reading the data! %v", err))
+	}
+}
+func DeleteZincUser(uuid string, zincUsername string, zincPassword string) {
+	zincBaseUrl := os.Getenv("ZINCBASE")
+	zincDocumentUrl := fmt.Sprintf("%s/api/user/%s", zincBaseUrl, uuid)
+	req, err := http.NewRequest("DELETE", zincDocumentUrl, strings.NewReader(""))
+	if err != nil {
+		log.Fatal(fmt.Errorf("error has occured when sending data! %v", err))
+	}
+
+	req.SetBasicAuth(zincUsername, zincPassword)
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		log.Fatal(fmt.Errorf("error has occured while grabbing data! %v", err))
+	}
+	defer resp.Body.Close()
 }

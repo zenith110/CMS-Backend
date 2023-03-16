@@ -20,22 +20,26 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		Creates a temporary array for the article model, loop through the contents of the input for all the tag data
 	*/
 	message, _ := JWTValidityCheck(input.Jwt)
-	if message == "Unauthorized!" {
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	if message == "Unauthorized!" || redisData["role"] == "Reader" {
 		panic("Unauthorized!")
 	}
+	username := redisData["username"]
+	zincUsername, zincPassword := ZincLogin(input.ProjectUUID)
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
 		tag := model.Tag{
-			Language: *input.Tags[tagData].Name,
+			Tag: *input.Tags[tagData].Name,
 		}
 		tags = append(tags, tag)
 		tagsString = append(tagsString, *input.Tags[tagData].Name)
 	}
 	imageURL := UploadFileToS3(input)
 	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles")
-	author := model.Author{Name: input.Username}
+	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
+	author := model.Author{Name: username}
 	article := model.Article{Title: *input.Title, Author: &author, ContentData: *input.ContentData, DateWritten: *input.DateWritten, URL: *input.URL, Description: *input.Description, UUID: *input.UUID, Tags: tags, TitleCard: imageURL}
 	res, err := collection.InsertOne(context.TODO(), article)
 	if err != nil {
@@ -56,104 +60,128 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"TitleCard":   "%s",
 		"Tags":        "%s",
 		"Project": 	   "%s",
-	}`, *input.Title, *&input.Username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID)
+	}`, *input.Title, username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID)
 
 	log.WithFields(log.Fields{
 		"article state": "created mongodb instance",
 	}).Info("Article has been created, inserting into zinc!")
-
-	CreateDocument(fmt.Sprintf("%s-%s-articles", input.Username, input.ProjectUUID), zincData, *input.UUID, input.Username, input.Password)
+	CreateDocument(fmt.Sprintf("%s-articles", zincUsername), zincData, input.ProjectUUID, zincUsername, zincPassword)
 	log.WithFields(log.Fields{
 		"article state": "finished insertion",
 	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
 	return &article, err
 }
-func DeleteArticle(bucket *model.DeleteBucketInfo) (*model.Article, error) {
+func DeleteArticle(bucket *model.DeleteBucketInfo) (string, error) {
 	message, _ := JWTValidityCheck(bucket.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(bucket.Jwt, redisClient)
+	username := redisData["username"]
+	zincusername, password := ZincLogin(bucket.ProjectUUID)
+	role := redisData["role"]
 	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s-%s", bucket.Username, bucket.ProjectUUID)).Collection("articles")
-	article := model.Article{UUID: *bucket.UUID}
-	session := CreateAWSSession()
-	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-%s-images", bucket.Username, bucket.ProjectUUID)
-	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
-		Bucket: aws.String(bucketName),
-		Prefix: &bucket.Articlename,
-	})
+	if role == "Admin" || username == bucket.Username {
+		collection := client.Database(fmt.Sprintf("%s", bucket.ProjectUUID)).Collection("articles")
+		session := CreateAWSSession()
+		s3sc := s3.New(session)
+		bucketName := fmt.Sprintf("%s-images", zincusername)
+		iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+			Bucket: aws.String(bucketName),
+			Prefix: &bucket.Articlename,
+		})
 
-	DeleteArticleFolder(s3sc, iter, bucketName)
-	deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": *bucket.UUID})
-	if deleteResult.DeletedCount == 0 {
-		log.Fatal("Error on deleting data ", deleteError)
+		DeleteArticleFolder(s3sc, iter, bucketName)
+		deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": *bucket.UUID})
+		if deleteResult.DeletedCount == 0 {
+			log.Fatal("Error on deleting data ", deleteError)
+		}
+		zincData := fmt.Sprintf(`{
+			"UUID":        "%s"
+		}`, *bucket.UUID)
+
+		DeleteDocument(fmt.Sprintf("%s-articles", zincusername), zincData, bucket.ProjectUUID, zincusername, password)
+		return "successful", deleteError
 	}
-	zincData := fmt.Sprintf(`{
-		"UUID":        "%s"
-	}`, *bucket.UUID)
-	DeleteDocument(fmt.Sprintf("%s-%s-articles-%s", bucket.Username, bucket.ProjectUUID, *bucket.UUID), zincData, *bucket.UUID, bucket.Username, bucket.Password)
-	return &article, deleteError
+	var err error
+	return "", err
 }
 func FindArticle(input *model.FindArticlePrivateType) (*model.Article, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
+	// redisClient := RedisClientInstation()
+	// redisData := RedisUserInfo(input.Jwt, redisClient)
 	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
 	var article model.Article
 
 	//Passing the bson.D{{}} as the filter matches documents in the collection
-	err := collection.FindOne(context.TODO(), bson.M{"uuid": input.UUID}).Decode(&article)
-	if err != nil {
-		log.Fatal(err)
+	articleErr := collection.FindOne(context.TODO(), bson.M{"uuid": input.UUID}).Decode(&article)
+	if articleErr != nil {
+		log.Fatal(articleErr)
 	}
-	return &article, err
+	return &article, articleErr
 }
 func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
-	if message == "Unauthorized!" {
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	username, _ := ZincLogin(input.ProjectUUID)
+	if message == "Unauthorized!" || redisData["role"] == "Reader" {
 		panic("Unauthorized!")
 	}
+	bucketName := fmt.Sprintf("%s-images", username)
+	session := CreateAWSSession()
+	s3sc := s3.New(session)
+	fmt.Print(input.Originalfoldername)
+	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+		Bucket: aws.String(bucketName),
+		Prefix: &input.Originalfoldername,
+	})
+
+	DeleteArticleFolder(s3sc, iter, bucketName)
+	// zincusername, password := ZincLogin(input.ProjectUUID)
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
 		tag := model.Tag{
-			Language: *input.Tags[tagData].Name,
+			Tag: *input.Tags[tagData].Name,
 		}
 		tags = append(tags, tag)
 		tagsString = append(tagsString, *input.Tags[tagData].Name)
 	}
 	imageURL := UploadUpdatedFileToS3(input)
 	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s-%s", input.Username, input.ProjectUUID)).Collection("articles")
+	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
 
 	filter := bson.M{"uuid": input.UUID}
 	update := bson.D{primitive.E{Key: "$set", Value: bson.D{
-		primitive.E{Key: "title", Value: *input.Title}, primitive.E{Key: "TitleCard", Value: imageURL}, primitive.E{Key: "contentData", Value: *input.ContentData}, primitive.E{Key: "URL", Value: *input.URL}, primitive.E{Key: "Description", Value: input.Description}, primitive.E{Key: "tags", Value: tags},
+		primitive.E{Key: "uuid", Value: input.UUID}, primitive.E{Key: "TitleCard", Value: imageURL}, primitive.E{Key: "contentData", Value: *input.ContentData}, primitive.E{Key: "URL", Value: *input.URL}, primitive.E{Key: "Description", Value: input.Description}, primitive.E{Key: "tags", Value: tags}, primitive.E{Key: "title", Value: input.Title},
 	}}}
 	var article model.Article
-	_, err := collection.UpdateOne(
+	_, ArticleUpdateerr := collection.UpdateOne(
 		context.TODO(),
 		filter,
 		update,
 	)
-	if err != nil {
-		panic(fmt.Errorf("error has occured: %v", err))
+	if ArticleUpdateerr != nil {
+		panic(fmt.Errorf("error has occured: %v", ArticleUpdateerr))
 	}
 
-	zincData := fmt.Sprintf(`{
-		"Title":       "%s",
-		"Author":      "%s",
-		"ContentData": "%s",
-		"DateWritten": "%s",
-		"Url":         "%s",
-		"Description": "%s",
-		"UUID":        "%s",
-		"TitleCard":   "%s",
-		"Tags":        "%s"
-	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
-	UpdateDocument("articles", zincData, *input.UUID, input.Username, input.Password)
-	return &article, err
+	// zincData := fmt.Sprintf(`{
+	// 	"Title":       "%s",
+	// 	"Author":      "%s",
+	// 	"ContentData": "%s",
+	// 	"DateWritten": "%s",
+	// 	"Url":         "%s",
+	// 	"Description": "%s",
+	// 	"UUID":        "%s",
+	// 	"TitleCard":   "%s",
+	// 	"Tags":        "%s"
+	// }`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
+	// UpdateDocument(fmt.Sprintf("%s-articles", zincusername), zincData, *input.UUID, zincusername, password)
+	return &article, ArticleUpdateerr
 }
