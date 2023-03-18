@@ -112,8 +112,7 @@ func FindArticle(input *model.FindArticlePrivateType) (*model.Article, error) {
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
-	// redisClient := RedisClientInstation()
-	// redisData := RedisUserInfo(input.Jwt, redisClient)
+
 	client := ConnectToMongo()
 	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
 	var article model.Article
@@ -143,7 +142,7 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	})
 
 	DeleteArticleFolder(s3sc, iter, bucketName)
-	// zincusername, password := ZincLogin(input.ProjectUUID)
+	zincusername, password := ZincLogin(input.ProjectUUID)
 	var tags []model.Tag
 	var tagsString []string
 	for tagData := 0; tagData < len(input.Tags); tagData++ {
@@ -171,17 +170,17 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 		panic(fmt.Errorf("error has occured: %v", ArticleUpdateerr))
 	}
 
-	// zincData := fmt.Sprintf(`{
-	// 	"Title":       "%s",
-	// 	"Author":      "%s",
-	// 	"ContentData": "%s",
-	// 	"DateWritten": "%s",
-	// 	"Url":         "%s",
-	// 	"Description": "%s",
-	// 	"UUID":        "%s",
-	// 	"TitleCard":   "%s",
-	// 	"Tags":        "%s"
-	// }`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
-	// UpdateDocument(fmt.Sprintf("%s-articles", zincusername), zincData, *input.UUID, zincusername, password)
+	zincData := fmt.Sprintf(`{
+		"Title":       "%s",
+		"Author":      "%s",
+		"ContentData": "%s",
+		"DateWritten": "%s",
+		"Url":         "%s",
+		"Description": "%s",
+		"UUID":        "%s",
+		"TitleCard":   "%s",
+		"Tags":        "%s"
+	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
+	UpdateDocument(fmt.Sprintf("%s-articles", zincusername), zincData, *input.UUID, zincusername, password)
 	return &article, ArticleUpdateerr
 }

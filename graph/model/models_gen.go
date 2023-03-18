@@ -90,6 +90,11 @@ type DeleteProjectType struct {
 	UUID    string `json:"uuid"`
 }
 
+type DeleteUser struct {
+	UUID string `json:"uuid"`
+	Jwt  string `json:"jwt"`
+}
+
 type File struct {
 	Name        *string         `json:"name"`
 	FileData    *graphql.Upload `json:"fileData"`

@@ -72,6 +72,12 @@ func (r *mutationResolver) Logout(ctx context.Context, jwt string) (string, erro
 	return result, err
 }
 
+// DeleteUser is the resolver for the deleteUser field.
+func (r *mutationResolver) DeleteUser(ctx context.Context, input *model.DeleteUser) (string, error) {
+	message, err := routes.DeleteUser(input)
+	return message, err
+}
+
 // ArticlePrivate is the resolver for the articlePrivate field.
 func (r *queryResolver) ArticlePrivate(ctx context.Context, input *model.FindArticlePrivateType) (*model.Article, error) {
 	article, err := routes.FindArticle(input)

@@ -3,7 +3,12 @@ package routes
 import (
 	"context"
 	"fmt"
+	"os"
 
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/service/s3"
+	"github.com/aws/aws-sdk-go/service/s3/s3manager"
+	log "github.com/sirupsen/logrus"
 	"github.com/zenith110/CMS-Backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -50,4 +55,47 @@ func FetchUsers(jwt string) (*model.Users, error) {
 	cur.Close(context.TODO())
 
 	return &users, err
+}
+
+func DeleteUser(input *model.DeleteUser) (string, error) {
+	message, _ := JWTValidityCheck(input.Jwt)
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(input.Jwt, redisClient)
+	if message == "Unauthorized!" || redisData["role"] == "Reader" {
+		panic("Unauthorized!")
+	}
+	username := redisData["username"]
+	role := redisData["role"]
+	client := ConnectToMongo()
+	collection := client.Database("blog").Collection("Users")
+	var user model.User
+
+	//Passing the bson.D{{}} as the filter matches documents in the collection
+	userErr := collection.FindOne(context.TODO(), bson.M{"uuid": input.UUID}).Decode(&user)
+	if userErr != nil {
+		Info(fmt.Sprint("User could not be found!"))
+	}
+	if role == "Admin" {
+		session := CreateAWSSession()
+		s3sc := s3.New(session)
+		bucketName := "graphql-cms-profilepics"
+		if user.Username != os.Getenv("ADMINUSER") {
+			iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+				Bucket: aws.String(bucketName),
+				Prefix: &username,
+			})
+
+			DeleteArticleFolder(s3sc, iter, bucketName)
+			deleteResult, deleteError := collection.DeleteOne(context.TODO(), bson.M{"uuid": input.UUID})
+			if deleteResult.DeletedCount == 0 {
+				log.Fatal("Error on deleting data ", deleteError)
+			}
+
+			return fmt.Sprintf("Successful in deleting %s", user.Username), deleteError
+		}
+		var err error
+		return fmt.Sprintf("Not possible to delete %s!", user.Username), err
+	}
+	var err error
+	return "", err
 }
