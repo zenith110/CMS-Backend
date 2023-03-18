@@ -179,16 +179,26 @@ type User struct {
 	Role           string    `json:"role"`
 	ProfilePicture string    `json:"profilePicture"`
 	Bio            string    `json:"bio"`
-	ProfileLInk    string    `json:"profileLInk"`
+	ProfileLink    string    `json:"profileLink"`
 	Projects       *Projects `json:"projects"`
 	Username       string    `json:"username"`
+	UUID           string    `json:"uuid"`
 }
 
 type UserCreation struct {
-	UUID  string `json:"uuid"`
-	Email string `json:"email"`
-	Jwt   string `json:"jwt"`
-	Role  string `json:"role"`
+	UUID       string `json:"uuid"`
+	Email      string `json:"email"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	Jwt        string `json:"jwt"`
+	Role       string `json:"role"`
+	Name       string `json:"name"`
+	ProfilePic *File  `json:"profilePic"`
+}
+
+type Users struct {
+	Users      []User `json:"users"`
+	TotalCount int    `json:"totalCount"`
 }
 
 type Jwt struct {

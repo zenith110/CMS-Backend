@@ -106,6 +106,12 @@ func (r *queryResolver) ArticlePublic(ctx context.Context, input *model.FindArti
 	panic(fmt.Errorf("not implemented: ArticlePublic - articlePublic"))
 }
 
+// GetUsers is the resolver for the getUsers field.
+func (r *queryResolver) GetUsers(ctx context.Context, jwt string) (*model.Users, error) {
+	users, err := routes.FetchUsers(jwt)
+	return users, err
+}
+
 // Mutation returns MutationResolver implementation.
 func (r *Resolver) Mutation() MutationResolver { return &mutationResolver{r} }
 
