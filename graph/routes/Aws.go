@@ -77,7 +77,7 @@ func ProcessImages(storage map[string]any) bytes.Buffer {
 	}
 	return buffer
 }
-func UploadImage(information map[string]any, jwt string) string {
+func UploadImageArticle(information map[string]any, jwt string) string {
 	var err error
 	s3ConnectionUploader := information["s3ConnectionUploader"].(*s3manager.Uploader)
 	bucketName := information["bucketName"].(string)
@@ -157,7 +157,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"imageUUID":            *input.UUID,
 		}
 
-		return UploadImage(uploadImageMap, input.Jwt)
+		return UploadImageArticle(uploadImageMap, input.Jwt)
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
 		uploadImageMap := map[string]any{
@@ -172,7 +172,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
 		}
-		return UploadImage(uploadImageMap, input.Jwt)
+		return UploadImageArticle(uploadImageMap, input.Jwt)
 	}
 }
 
@@ -222,7 +222,56 @@ func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-images.s3.%s.amazonaws.com/%s/%s", zincusername, input.ProjectUUID, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		url := fmt.Sprintf("https://%s-images.s3.%s.amazonaws.com/%s/%s", zincusername, os.Getenv("AWS_REGION"), *input.URL, *input.TitleCard.Name)
+		return url
+	}
+}
+func UploadAvatarImageCreation(input *model.UserCreation) string {
+	session := CreateAWSSession()
+	s3ConnectionUploader := s3manager.NewUploader(session)
+	srcImage, _, err := image.Decode(input.ProfilePic.FileData.File)
+	if err != nil {
+		panic(fmt.Errorf("error has occured!\n%v", err))
+	}
+	var buffer bytes.Buffer
+	storage := map[string]any{
+		"buffer":           buffer,
+		"imageContentType": *input.ProfilePic.ContentType,
+		"srcImage":         srcImage,
+	}
+	finalImageBuffer := ProcessImages(storage)
+	finalImage := bytes.NewReader(finalImageBuffer.Bytes())
+	s3sc := s3.New(session)
+	bucketName := "graphql-cms-profilepics"
+	bucketExist := CheckIfBucketExist(s3sc, bucketName)
+	if bucketExist == true {
+		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(bucketName),
+			Key:         aws.String(fmt.Sprintf("%s/%s", input.Username, *input.ProfilePic.Name)),
+			Body:        finalImage,
+			ACL:         aws.String("public-read"),
+			ContentType: aws.String(*input.ProfilePic.ContentType),
+		})
+
+		if err != nil {
+			panic(fmt.Errorf("error has occured! %s", err))
+		}
+		url := fmt.Sprintf("https://%s-graphql-cms-profilepics.s3.%s.amazonaws.com/%s", input.Username, os.Getenv("AWS_REGION"), *input.ProfilePic.Name)
+		return url
+	} else {
+		CreateProjectBucket(s3sc, bucketName)
+		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
+			Bucket:      aws.String(bucketName),
+			Key:         aws.String(fmt.Sprintf("%s/%s", input.Username, *input.ProfilePic.Name)),
+			Body:        finalImage,
+			ACL:         aws.String("public-read"),
+			ContentType: aws.String(*input.ProfilePic.ContentType),
+		})
+
+		if err != nil {
+			panic(fmt.Errorf("error has occured! %s", err))
+		}
+		url := fmt.Sprintf("https://%s-graphql-cms-profilepics.s3.%s.amazonaws.com/%s", input.Username, os.Getenv("AWS_REGION"), *input.ProfilePic.Name)
 		return url
 	}
 }

@@ -10,6 +10,7 @@ type Query {
   getGalleryImages(jwt: String!, ): GalleryImages
   getProjects(input: GetProjectType): Projects
   articlePublic(input: FindArticlePublicType): Article
+  getUsers(jwt: String!): Users!
 }
 type Mutation {
   createArticle(
@@ -63,8 +64,12 @@ input GetProjectType{
 input UserCreation{
   uuid: String!
   email: String!
+  username: String!
+  password: String!
   jwt: String!
   role: String!
+  name: String!
+  profilePic: File
 }
 type User{
   email: String!
@@ -72,9 +77,15 @@ type User{
   role: String!
   profilePicture: String!
   bio: String!
-  profileLInk: String!
+  profileLink: String!
   projects: Projects!
   username: String!
+  uuid: String!
+}
+
+type Users{
+  users: [User!]!
+  totalCount: Int!
 }
 input CreateProjectInput{
   uuid: String!

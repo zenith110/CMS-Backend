@@ -3,12 +3,10 @@ package routes
 import (
 	"context"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
-	"strings"
 
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"github.com/zenith110/CMS-Backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
@@ -35,6 +33,7 @@ func comparePasswords(hashedPwd string, plainPwd []byte) bool {
 
 func CreateDefaultAdmin() {
 	client := ConnectToMongo()
+	adminuuid := uuid.New()
 	dbrole := client.Database("users").Collection("Admin")
 	dbnormal := client.Database("blog").Collection("Users")
 	var roleUserlookup model.User
@@ -49,7 +48,7 @@ func CreateDefaultAdmin() {
 		hashedPassword := hashAndSalt([]byte(password))
 		frontendUri := os.Getenv("CMSFRONTENDURI")
 		email := os.Getenv("ADMINEMAIL")
-		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: "", ProfileLInk: fmt.Sprintf("%s/%s", frontendUri, email), Role: "Admin", Projects: &projects, Username: username}
+		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: "", ProfileLink: fmt.Sprintf("%s/%s", frontendUri, email), Role: "Admin", Projects: &projects, Username: username, UUID: adminuuid.String()}
 		_, dbroleInserterr := dbrole.InsertOne(context.TODO(), user)
 		_, dbnormalInserterr := dbnormal.InsertOne(context.TODO(), user)
 		if dbroleInserterr != nil || dbnormalInserterr != nil {
@@ -61,12 +60,12 @@ func CreateDefaultAdmin() {
 	}
 }
 func CreateUser(input *model.UserCreation) (*model.User, error) {
-	if input.Jwt == "" {
-		panic("JWT is invalid!")
-	}
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
-	username := redisData["username"]
+	if input.Jwt == "" || redisData["role"] != "Admin" {
+		panic("Error occured. Credentials are not valid!")
+	}
+	username := input.Username
 	client := ConnectToMongo()
 	dbrole := client.Database("users").Collection(*&input.Role)
 	dbnormal := client.Database("blog").Collection("Users")
@@ -75,52 +74,24 @@ func CreateUser(input *model.UserCreation) (*model.User, error) {
 	email := input.Email
 	// Looks up the user
 	dbroleerr := dbrole.FindOne(context.TODO(), bson.M{"username": username}).Decode(&roleUserlookup)
-	dbnormalerr := dbrole.FindOne(context.TODO(), bson.M{"username": username}).Decode(&userlookup)
-	if dbroleerr != nil && dbnormalerr != nil {
+	dbnormalerr := dbnormal.FindOne(context.TODO(), bson.M{"username": username}).Decode(&userlookup)
+	if dbroleerr != nil || dbnormalerr != nil {
 		var projects model.Projects
-		password := redisData["password"]
+		password := input.Password
 		hashedPassword := hashAndSalt([]byte(password))
 		frontendUri := os.Getenv("CMSFRONTENDURI")
-		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: "", ProfileLInk: fmt.Sprintf("%s/%s", frontendUri, email), Role: input.Role, Projects: &projects, Username: username}
+		profilePic := UploadAvatarImageCreation(input)
+		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: profilePic, ProfileLink: fmt.Sprintf("%s/%s", frontendUri, username), Role: input.Role, Projects: &projects, Username: username, UUID: input.UUID}
 		_, dbroleInserterr := dbrole.InsertOne(context.TODO(), user)
 		_, dbnormalInserterr := dbnormal.InsertOne(context.TODO(), user)
 		if dbroleInserterr != nil || dbnormalInserterr != nil {
 			fmt.Printf("error is %v", dbnormalInserterr)
 		}
 		defer CloseClientDB()
-		zincUsername := redisData["username"]
-		zincPassword := redisData["password"]
-		zincBaseUrl := os.Getenv("ZINCBASE")
-		zincData := fmt.Sprintf(`{
-			"_id": "%s",
-			"name": "%s",
-			"role": "%s",
-			"password": "%s"
-		}`, username, input.Email, input.Role, password)
-		zincDocumentUrl := fmt.Sprintf("%s/api/user", zincBaseUrl)
-		req, err := http.NewRequest("POST", zincDocumentUrl, strings.NewReader(zincData))
-		if err != nil {
-			log.Fatal(fmt.Errorf("error has occured when sending data! %v", err))
-		}
-
-		req.SetBasicAuth(zincUsername, zincPassword)
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("User-Agent", os.Getenv("USERAGENT"))
-
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			log.Fatal(fmt.Errorf("error has occured while grabbing data! %v", err))
-		}
-		defer resp.Body.Close()
-
-		_, userCreationErr := io.ReadAll(resp.Body)
-		if userCreationErr != nil {
-			log.Fatal(fmt.Errorf("error occured while reading the data! %v", err))
-		}
 		return &user, dbnormalInserterr
 	}
 	var projects model.Projects
-	return &model.User{Email: "", HashedPassword: "", Role: "", ProfilePicture: "", ProfileLInk: "", Projects: &projects, Username: ""}, nil
+	return &model.User{Email: "", HashedPassword: "", Role: "", ProfilePicture: "", ProfileLink: "", Projects: &projects, Username: ""}, nil
 }
 
 /*
