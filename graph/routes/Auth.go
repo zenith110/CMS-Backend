@@ -34,24 +34,20 @@ func comparePasswords(hashedPwd string, plainPwd []byte) bool {
 func CreateDefaultAdmin() {
 	client := ConnectToMongo()
 	adminuuid := uuid.New()
-	dbrole := client.Database("users").Collection("Admin")
 	dbnormal := client.Database("blog").Collection("Users")
-	var roleUserlookup model.User
 	var userlookup model.User
 	username := os.Getenv("ADMINUSER")
 	// Looks up the user
-	dbroleerr := dbrole.FindOne(context.TODO(), bson.M{"username": username}).Decode(&roleUserlookup)
-	dbnormalerr := dbrole.FindOne(context.TODO(), bson.M{"username": username, "role": "Admin"}).Decode(&userlookup)
-	if dbroleerr != nil && dbnormalerr != nil {
+	dbnormalerr := dbnormal.FindOne(context.TODO(), bson.M{"username": username, "role": "Admin"}).Decode(&userlookup)
+	if dbnormalerr != nil {
 		var projects model.Projects
 		password := os.Getenv("ADMINPASSWORD")
 		hashedPassword := hashAndSalt([]byte(password))
 		frontendUri := os.Getenv("CMSFRONTENDURI")
 		email := os.Getenv("ADMINEMAIL")
 		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: "", ProfileLink: fmt.Sprintf("%s/%s", frontendUri, email), Role: "Admin", Projects: &projects, Username: username, UUID: adminuuid.String()}
-		_, dbroleInserterr := dbrole.InsertOne(context.TODO(), user)
 		_, dbnormalInserterr := dbnormal.InsertOne(context.TODO(), user)
-		if dbroleInserterr != nil || dbnormalInserterr != nil {
+		if dbnormalInserterr != nil {
 			fmt.Printf("error is %v", dbnormalInserterr)
 		}
 		CreateZincUser(username, password, email)
@@ -67,24 +63,21 @@ func CreateUser(input *model.UserCreation) (*model.User, error) {
 	}
 	username := input.Username
 	client := ConnectToMongo()
-	dbrole := client.Database("users").Collection(*&input.Role)
+
 	dbnormal := client.Database("blog").Collection("Users")
-	var roleUserlookup model.User
 	var userlookup model.User
 	email := input.Email
 	// Looks up the user
-	dbroleerr := dbrole.FindOne(context.TODO(), bson.M{"username": username}).Decode(&roleUserlookup)
 	dbnormalerr := dbnormal.FindOne(context.TODO(), bson.M{"username": username}).Decode(&userlookup)
-	if dbroleerr != nil || dbnormalerr != nil {
+	if dbnormalerr != nil {
 		var projects model.Projects
 		password := input.Password
 		hashedPassword := hashAndSalt([]byte(password))
 		frontendUri := os.Getenv("CMSFRONTENDURI")
 		profilePic := UploadAvatarImageCreation(input)
-		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: profilePic, ProfileLink: fmt.Sprintf("%s/%s", frontendUri, username), Role: input.Role, Projects: &projects, Username: username, UUID: input.UUID}
-		_, dbroleInserterr := dbrole.InsertOne(context.TODO(), user)
+		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: profilePic, ProfileLink: fmt.Sprintf("%s/%s", frontendUri, username), Role: input.Role, Projects: &projects, Username: username, UUID: input.UUID, Bio: input.Bio}
 		_, dbnormalInserterr := dbnormal.InsertOne(context.TODO(), user)
-		if dbroleInserterr != nil || dbnormalInserterr != nil {
+		if dbnormalInserterr != nil {
 			fmt.Printf("error is %v", dbnormalInserterr)
 		}
 		defer CloseClientDB()

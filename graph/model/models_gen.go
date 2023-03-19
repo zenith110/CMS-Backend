@@ -90,6 +90,23 @@ type DeleteProjectType struct {
 	UUID    string `json:"uuid"`
 }
 
+type DeleteUser struct {
+	UUID string `json:"uuid"`
+	Jwt  string `json:"jwt"`
+}
+
+type EditUser struct {
+	UUID       string `json:"uuid"`
+	Email      string `json:"email"`
+	Username   string `json:"username"`
+	Password   string `json:"password"`
+	Jwt        string `json:"jwt"`
+	Role       string `json:"role"`
+	Name       string `json:"name"`
+	ProfilePic *File  `json:"profilePic"`
+	Bio        string `json:"bio"`
+}
+
 type File struct {
 	Name        *string         `json:"name"`
 	FileData    *graphql.Upload `json:"fileData"`
@@ -194,6 +211,7 @@ type UserCreation struct {
 	Role       string `json:"role"`
 	Name       string `json:"name"`
 	ProfilePic *File  `json:"profilePic"`
+	Bio        string `json:"bio"`
 }
 
 type Users struct {

@@ -25,8 +25,26 @@ type Mutation {
   deleteProject(input: DeleteProjectType): String!
   deleteProjects(input: DeleteAllProjects): String!
   logout(jwt: String!): String!
+  deleteUser(input: DeleteUser): String!
+  deleteAllUsers(jwt: String!): String!
+  editUser(input: EditUser): String!
 }
 
+input EditUser{
+  uuid: String!
+  email: String!
+  username: String!
+  password: String!
+  jwt: String!
+  role: String!
+  name: String!
+  profilePic: File
+  bio: String!
+}
+input DeleteUser{
+  uuid: String!
+  jwt: String!
+}
 type LoginData{
   jwt: String!
   role: String!
@@ -70,6 +88,7 @@ input UserCreation{
   role: String!
   name: String!
   profilePic: File
+  bio: String!
 }
 type User{
   email: String!

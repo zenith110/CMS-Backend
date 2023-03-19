@@ -72,6 +72,23 @@ func (r *mutationResolver) Logout(ctx context.Context, jwt string) (string, erro
 	return result, err
 }
 
+// DeleteUser is the resolver for the deleteUser field.
+func (r *mutationResolver) DeleteUser(ctx context.Context, input *model.DeleteUser) (string, error) {
+	message, err := routes.DeleteUser(input)
+	return message, err
+}
+
+// DeleteAllUsers is the resolver for the deleteAllUsers field.
+func (r *mutationResolver) DeleteAllUsers(ctx context.Context, jwt string) (string, error) {
+	results, err := routes.DeleteAllUsers(jwt)
+	return results, err
+}
+
+// EditUser is the resolver for the editUser field.
+func (r *mutationResolver) EditUser(ctx context.Context, input *model.EditUser) (string, error) {
+	panic(fmt.Errorf("not implemented: EditUser - editUser"))
+}
+
 // ArticlePrivate is the resolver for the articlePrivate field.
 func (r *queryResolver) ArticlePrivate(ctx context.Context, input *model.FindArticlePrivateType) (*model.Article, error) {
 	article, err := routes.FindArticle(input)
@@ -86,7 +103,8 @@ func (r *queryResolver) ArticlesPrivate(ctx context.Context, input *model.Articl
 
 // ArticlesPublic is the resolver for the articlesPublic field.
 func (r *queryResolver) ArticlesPublic(ctx context.Context, input *model.GetZincArticleInput) (*model.Articles, error) {
-	panic(fmt.Errorf("not implemented: ArticlesPublic - articlesPublic"))
+	results, err := routes.FetchArticlesZinc(input)
+	return results, err
 }
 
 // GetGalleryImages is the resolver for the getGalleryImages field.
@@ -120,3 +138,13 @@ func (r *Resolver) Query() QueryResolver { return &queryResolver{r} }
 
 type mutationResolver struct{ *Resolver }
 type queryResolver struct{ *Resolver }
+
+// !!! WARNING !!!
+// The code below was going to be deleted when updating resolvers. It has been copied here so you have
+// one last chance to move it out of harms way if you want. There are two reasons this happens:
+//   - When renaming or deleting a resolver the old code will be put in here. You can safely delete
+//     it when you're done.
+//   - You have helper methods in this file. Move them out to keep these resolver files clean.
+func (r *mutationResolver) EditUserCheck(ctx context.Context, input *model.EditUser) (string, error) {
+	panic(fmt.Errorf("not implemented: EditUserCheck - editUserCheck"))
+}
