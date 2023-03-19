@@ -26,9 +26,10 @@ func FetchUsers(jwt string) (*model.Users, error) {
 	var usersStorage []model.User
 	client := ConnectToMongo()
 	db := client.Database("blog").Collection("Users")
+	filter := bson.M{"username": bson.M{"$ne": os.Getenv("ADMINUSER")}}
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
-	cur, err := db.Find(context.TODO(), bson.D{{}}, findOptions)
+	cur, err := db.Find(context.TODO(), filter, findOptions)
 	if err != nil {
 		fmt.Printf("An error has occured, could not find collection! \nFull error %s", err.Error())
 	}
@@ -46,7 +47,9 @@ func FetchUsers(jwt string) (*model.Users, error) {
 		usersStorage = append(usersStorage, user)
 		totalUsers += 1
 	}
+
 	var users = model.Users{Users: usersStorage, TotalCount: totalUsers}
+
 	if err := cur.Err(); err != nil {
 		fmt.Printf("An error has occured, could not parse cursor data! \nFull error %s", err.Error())
 	}
@@ -98,4 +101,34 @@ func DeleteUser(input *model.DeleteUser) (string, error) {
 	}
 	var err error
 	return "", err
+}
+
+func DeleteAllUsers(jwt string) (string, error) {
+	message, _ := JWTValidityCheck(jwt)
+	if message == "Unauthorized!" {
+		panic("Unauthorized!")
+	}
+
+	client := ConnectToMongo()
+	redisClient := RedisClientInstation()
+	redisData := RedisUserInfo(jwt, redisClient)
+	username := redisData["username"]
+	if username == os.Getenv("ADMINUSER") {
+		filter := bson.M{"username": bson.M{"$ne": os.Getenv("ADMINUSER")}}
+		deleteResults, deleteError := client.Database("blog").Collection("Users").DeleteMany(context.TODO(), filter)
+		if deleteResults.DeletedCount == 0 {
+			log.Fatal("Error on deleting data ", deleteError)
+		}
+		session := CreateAWSSession()
+		s3sc := s3.New(session)
+		imagesIndex := "graphql-cms-profilepics"
+		iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
+			Bucket: aws.String(imagesIndex),
+		})
+		DeleteArticleFolder(s3sc, iter, imagesIndex)
+		var err error
+		return "successfully deleted all users but base user!", err
+	}
+	var err error
+	return "Could not delete all users.", err
 }
