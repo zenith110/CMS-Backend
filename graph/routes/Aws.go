@@ -101,7 +101,7 @@ func UploadImageArticle(information map[string]any, jwt string) string {
 		panic(fmt.Errorf("error has occured in uploading! %s", err))
 	}
 
-	url := fmt.Sprintf("https://%s-%s-images.s3.%s.amazonaws.com/%s/%s", username, projectUuid, os.Getenv("AWS_REGION"), URL, titleCardName)
+	url := fmt.Sprintf("https://%s-images.s3.%s.amazonaws.com/%s/%s", projectUuid, os.Getenv("AWS_REGION"), URL, titleCardName)
 	if err != nil {
 		panic(fmt.Errorf("error has occured! %s", err))
 	}

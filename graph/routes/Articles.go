@@ -83,7 +83,8 @@ func FetchArticles(input *model.ArticlesPrivate) (*model.Articles, error) {
 		articlesStorage = append(articlesStorage, article)
 		totalArticles += 1
 	}
-	var articles = model.Articles{Article: articlesStorage, Total: totalArticles}
+	_, zincPassword := ZincLogin(input.ProjectUUID)
+	var articles = model.Articles{Article: articlesStorage, Total: totalArticles, ZincPassword: zincPassword}
 	if err := cur.Err(); err != nil {
 		fmt.Printf("An error has occured, could not parse cursor data! \nFull error %s", err.Error())
 	}
@@ -94,18 +95,12 @@ func FetchArticles(input *model.ArticlesPrivate) (*model.Articles, error) {
 	return &articles, err
 }
 func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error) {
-	message, _ := JWTValidityCheck(input.Jwt)
-	if message == "Unauthorized!" {
-		panic(fmt.Sprint("This JWT is invalid!!"))
-	}
-	redisClient := RedisClientInstation()
-	redisData := RedisUserInfo(input.Jwt, redisClient)
-	username := redisData["username"]
-	password := redisData["password"]
+	username := input.Username
+	password := input.Password
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	var zinc Zinc
-	data := SearchDocuments(fmt.Sprintf("%s-articles", input.ProjectUUID), input.Keyword, username, password)
+	data := SearchDocuments(fmt.Sprintf("%s-articles", username), input.Keyword, username, password)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))

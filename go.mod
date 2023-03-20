@@ -12,6 +12,7 @@ require (
 	github.com/gorilla/websocket v1.5.0
 	github.com/rs/cors v1.8.3
 	github.com/sirupsen/logrus v1.9.0
+	github.com/thanhpk/randstr v1.0.4
 	github.com/vektah/gqlparser/v2 v2.5.1
 	go.mongodb.org/mongo-driver v1.11.1
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d

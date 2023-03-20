@@ -27,8 +27,9 @@ type ArticleTagInput struct {
 }
 
 type Articles struct {
-	Article []Article `json:"article"`
-	Total   int       `json:"total"`
+	Article      []Article `json:"article"`
+	Total        int       `json:"total"`
+	ZincPassword string    `json:"zincPassword"`
 }
 
 type ArticlesPrivate struct {
@@ -138,7 +139,8 @@ type GetProjectType struct {
 type GetZincArticleInput struct {
 	ProjectUUID string `json:"project_uuid"`
 	Keyword     string `json:"keyword"`
-	Jwt         string `json:"jwt"`
+	Username    string `json:"username"`
+	Password    string `json:"password"`
 }
 
 type Image struct {
@@ -217,6 +219,11 @@ type UserCreation struct {
 type Users struct {
 	Users      []User `json:"users"`
 	TotalCount int    `json:"totalCount"`
+}
+
+type ZincUser struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
 }
 
 type Jwt struct {

@@ -7,6 +7,7 @@ import (
 
 	"github.com/aws/aws-sdk-go/service/s3"
 	log "github.com/sirupsen/logrus"
+	"github.com/thanhpk/randstr"
 	"github.com/zenith110/CMS-Backend/graph/model"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo/options"
@@ -33,14 +34,26 @@ func CreateProject(input *model.CreateProjectInput) (*model.Project, error) {
 	}
 	session := CreateAWSSession()
 	s3sc := s3.New(session)
-	zincusername, _ := ZincLogin(input.UUID)
-	bucketName := fmt.Sprintf("%s-images", zincusername)
+	bucketName := fmt.Sprintf("%s-images", input.UUID)
 	bucketExist := CheckIfBucketExist(s3sc, bucketName)
+	password := randstr.String(36)
+	encryptedPassword, err := Encrypt(password)
+	if err != nil {
+		panic(fmt.Errorf("\nError is %v", err))
+	}
 	if bucketExist == true {
 		return &project, nil
 	}
 	CreateProjectBucket(s3sc, bucketName)
-	CreateZincUser(input.UUID, fmt.Sprintf("%s-%s", input.UUID, os.Getenv("ENCRYPTIONKEY")), "")
+	CreateZincUser(input.UUID, password, "")
+	zinccollection := client.Database("zinc").Collection("users")
+	zincuser := model.ZincUser{Username: input.UUID, Password: encryptedPassword}
+	_, zincerr := zinccollection.InsertOne(context.TODO(), zincuser)
+	if zincerr != nil {
+		var emptyProject model.Project
+		return &emptyProject, err
+	}
+
 	return &project, err
 }
 
@@ -101,16 +114,19 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	if deleteResult.DeletedCount == 0 {
 		log.Fatal("Error on deleting data ", deleteError)
 	}
+	zinccollection := client.Database("zinc").Collection("users")
+	deleteZincResult, deleteZincError := zinccollection.DeleteOne(context.TODO(), bson.M{"username": input.UUID})
+	if deleteZincResult.DeletedCount == 0 {
+		log.Fatal("Error on deleting data ", deleteZincError)
+	}
 	defer CloseClientDB()
 	bucketName := fmt.Sprintf("%s-images", username)
 	session := CreateAWSSession()
 	// Makes an s3 service client
 	s3sc := s3.New(session)
-	zincData := fmt.Sprintf(`{
-		"UUID":        "%s"
-	}`, input.UUID)
 	DeleteBucket(s3sc, bucketName)
-	DeleteDocument(bucketName, zincData, input.UUID, username, password)
+	DeleteIndex(fmt.Sprintf("%s-articles", username), username, password)
+	DeleteIndex(bucketName, username, password)
 	DeleteZincUser(input.UUID, username, password)
 	var err error
 	return fmt.Sprintf("Deleted project %s", input.Project), err
@@ -118,6 +134,8 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 
 func DeleteProjects(input *model.DeleteAllProjects) (string, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
+	username := os.Getenv("ZINC_FIRST_ADMIN_USER")
+	password := os.Getenv("ZINC_FIRST_ADMIN_PASSWORD")
 	if message == "Unauthorized!" {
 		panic("Unauthorized!")
 	}
@@ -128,6 +146,7 @@ func DeleteProjects(input *model.DeleteAllProjects) (string, error) {
 		log.Fatal(err)
 	}
 	DeleteAllProjectsBuckets(redisData["username"])
+	DeleteIndex("*-articles", username, password)
 	var err error
 	return "", err
 }

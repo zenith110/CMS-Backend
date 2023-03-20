@@ -37,21 +37,13 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		tagsString = append(tagsString, *input.Tags[tagData].Name)
 	}
 	imageURL := UploadFileToS3(input)
-	client := ConnectToMongo()
-	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
-	author := model.Author{Name: username}
-	article := model.Article{Title: *input.Title, Author: &author, ContentData: *input.ContentData, DateWritten: *input.DateWritten, URL: *input.URL, Description: *input.Description, UUID: *input.UUID, Tags: tags, TitleCard: imageURL}
-	res, err := collection.InsertOne(context.TODO(), article)
-	if err != nil {
-		log.Fatal(err)
-	}
 	log.WithFields(log.Fields{
-		"article state": "pre-insert mongo data",
+		"article state": "post-insert mongo data",
 	}).Info("Article has been created, inserting into zinc!")
 
 	zincData := fmt.Sprintf(`{
 		"Title":       "%s",
-		"Username":      "%s",
+		"Username":    "%s",
 		"ContentData": "%s",
 		"DateWritten": "%s",
 		"Url":         "%s",
@@ -59,13 +51,22 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"UUID":        "%s",
 		"TitleCard":   "%s",
 		"Tags":        "%s",
-		"Project": 	   "%s",
+		"Project": 	   "%s"
 	}`, *input.Title, username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID)
 
 	log.WithFields(log.Fields{
 		"article state": "created mongodb instance",
 	}).Info("Article has been created, inserting into zinc!")
-	CreateDocument(fmt.Sprintf("%s-articles", zincUsername), zincData, input.ProjectUUID, zincUsername, zincPassword)
+	CreateDocument(fmt.Sprintf("%s-articles", zincUsername), zincData, *input.UUID, zincUsername, zincPassword)
+	client := ConnectToMongo()
+	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
+	author := model.Author{Name: username}
+	article := model.Article{Title: *input.Title, Author: &author, ContentData: *input.ContentData, DateWritten: *input.DateWritten, URL: *input.URL, Description: *input.Description, UUID: *input.UUID, Tags: tags, TitleCard: imageURL}
+	res, err := collection.InsertOne(context.TODO(), article)
+	if err != nil {
+		log.Fatal("Error has been encountered while trying to insert!! %v", err)
+	}
+
 	log.WithFields(log.Fields{
 		"article state": "finished insertion",
 	}).Info(fmt.Sprintf("Inserted a single document: %s", res.InsertedID))
@@ -101,7 +102,7 @@ func DeleteArticle(bucket *model.DeleteBucketInfo) (string, error) {
 			"UUID":        "%s"
 		}`, *bucket.UUID)
 
-		DeleteDocument(fmt.Sprintf("%s-articles", zincusername), zincData, bucket.ProjectUUID, zincusername, password)
+		DeleteDocument(fmt.Sprintf("%s-articles", zincusername), zincData, *bucket.UUID, zincusername, password)
 		return "successful", deleteError
 	}
 	var err error
