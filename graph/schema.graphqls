@@ -74,7 +74,8 @@ input DeleteProjectType{
 input GetZincArticleInput{
   project_uuid: String!
   keyword: String!
-  jwt: String!
+  username: String!
+  password: String!
 }
 input GetProjectType{
   jwt: String!
@@ -204,6 +205,7 @@ input ArticleTagInput {
 type Articles {
   article: [Article!]!
   total: Int!
+  zincPassword: String!
 }
 type Tag {
   tag: String!
@@ -215,6 +217,11 @@ type Project{
   author: String!
   description: String!
   encryptionKey: String!
+}
+
+type ZincUser{
+  username: String!
+  password: String!
 }
 
 type Projects{

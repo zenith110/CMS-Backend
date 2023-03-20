@@ -63,8 +63,9 @@ type ComplexityRoot struct {
 	}
 
 	Articles struct {
-		Article func(childComplexity int) int
-		Total   func(childComplexity int) int
+		Article      func(childComplexity int) int
+		Total        func(childComplexity int) int
+		ZincPassword func(childComplexity int) int
 	}
 
 	Author struct {
@@ -150,6 +151,11 @@ type ComplexityRoot struct {
 	Users struct {
 		TotalCount func(childComplexity int) int
 		Users      func(childComplexity int) int
+	}
+
+	ZincUser struct {
+		Password func(childComplexity int) int
+		Username func(childComplexity int) int
 	}
 
 	_Service struct {
@@ -284,6 +290,13 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Articles.Total(childComplexity), true
+
+	case "Articles.zincPassword":
+		if e.complexity.Articles.ZincPassword == nil {
+			break
+		}
+
+		return e.complexity.Articles.ZincPassword(childComplexity), true
 
 	case "Author.name":
 		if e.complexity.Author.Name == nil {
@@ -748,6 +761,20 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Users.Users(childComplexity), true
+
+	case "ZincUser.password":
+		if e.complexity.ZincUser.Password == nil {
+			break
+		}
+
+		return e.complexity.ZincUser.Password(childComplexity), true
+
+	case "ZincUser.username":
+		if e.complexity.ZincUser.Username == nil {
+			break
+		}
+
+		return e.complexity.ZincUser.Username(childComplexity), true
 
 	case "_Service.sdl":
 		if e.complexity._Service.SDL == nil {
@@ -1806,6 +1833,50 @@ func (ec *executionContext) fieldContext_Articles_total(ctx context.Context, fie
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Articles_zincPassword(ctx context.Context, field graphql.CollectedField, obj *model.Articles) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Articles_zincPassword(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ZincPassword, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Articles_zincPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Articles",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -3271,6 +3342,8 @@ func (ec *executionContext) fieldContext_Project_articles(ctx context.Context, f
 				return ec.fieldContext_Articles_article(ctx, field)
 			case "total":
 				return ec.fieldContext_Articles_total(ctx, field)
+			case "zincPassword":
+				return ec.fieldContext_Articles_zincPassword(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Articles", field.Name)
 		},
@@ -3580,6 +3653,8 @@ func (ec *executionContext) fieldContext_Query_articlesPrivate(ctx context.Conte
 				return ec.fieldContext_Articles_article(ctx, field)
 			case "total":
 				return ec.fieldContext_Articles_total(ctx, field)
+			case "zincPassword":
+				return ec.fieldContext_Articles_zincPassword(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Articles", field.Name)
 		},
@@ -3638,6 +3713,8 @@ func (ec *executionContext) fieldContext_Query_articlesPublic(ctx context.Contex
 				return ec.fieldContext_Articles_article(ctx, field)
 			case "total":
 				return ec.fieldContext_Articles_total(ctx, field)
+			case "zincPassword":
+				return ec.fieldContext_Articles_zincPassword(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Articles", field.Name)
 		},
@@ -4627,6 +4704,94 @@ func (ec *executionContext) fieldContext_Users_totalCount(ctx context.Context, f
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			return nil, errors.New("field of type Int does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ZincUser_username(ctx context.Context, field graphql.CollectedField, obj *model.ZincUser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ZincUser_username(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Username, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ZincUser_username(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ZincUser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _ZincUser_password(ctx context.Context, field graphql.CollectedField, obj *model.ZincUser) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_ZincUser_password(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.Password, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_ZincUser_password(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "ZincUser",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
 		},
 	}
 	return fc, nil
@@ -7213,7 +7378,7 @@ func (ec *executionContext) unmarshalInputGetZincArticleInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"project_uuid", "keyword", "jwt"}
+	fieldsInOrder := [...]string{"project_uuid", "keyword", "username", "password"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7236,11 +7401,19 @@ func (ec *executionContext) unmarshalInputGetZincArticleInput(ctx context.Contex
 			if err != nil {
 				return it, err
 			}
-		case "jwt":
+		case "username":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
+			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "password":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
+			it.Password, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7626,6 +7799,13 @@ func (ec *executionContext) _Articles(ctx context.Context, sel ast.SelectionSet,
 		case "total":
 
 			out.Values[i] = ec._Articles_total(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "zincPassword":
+
+			out.Values[i] = ec._Articles_zincPassword(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -8381,6 +8561,41 @@ func (ec *executionContext) _Users(ctx context.Context, sel ast.SelectionSet, ob
 		case "totalCount":
 
 			out.Values[i] = ec._Users_totalCount(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		default:
+			panic("unknown field " + strconv.Quote(field.Name))
+		}
+	}
+	out.Dispatch()
+	if invalids > 0 {
+		return graphql.Null
+	}
+	return out
+}
+
+var zincUserImplementors = []string{"ZincUser"}
+
+func (ec *executionContext) _ZincUser(ctx context.Context, sel ast.SelectionSet, obj *model.ZincUser) graphql.Marshaler {
+	fields := graphql.CollectFields(ec.OperationContext, sel, zincUserImplementors)
+	out := graphql.NewFieldSet(fields)
+	var invalids uint32
+	for i, field := range fields {
+		switch field.Name {
+		case "__typename":
+			out.Values[i] = graphql.MarshalString("ZincUser")
+		case "username":
+
+			out.Values[i] = ec._ZincUser_username(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "password":
+
+			out.Values[i] = ec._ZincUser_password(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

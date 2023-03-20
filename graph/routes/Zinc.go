@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net/http"
@@ -8,6 +9,8 @@ import (
 	"strings"
 
 	log "github.com/sirupsen/logrus"
+	"github.com/zenith110/CMS-Backend/graph/model"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func CreateDocument(index string, data string, uuid string, userName string, password string) {
@@ -42,7 +45,7 @@ func UpdateDocument(index string, data string, uuid string, userName string, pas
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_update/%s", zincBaseUrl, index, uuid)
 
-	req, err := http.NewRequest("POST", zincDocumentUrl, strings.NewReader(data))
+	req, err := http.NewRequest("PUT", zincDocumentUrl, strings.NewReader(data))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -159,7 +162,18 @@ func DeleteIndex(index string, username string, password string) {
 
 func ZincLogin(uuid string) (string, string) {
 	username := uuid
-	password := fmt.Sprintf("%s-%s", uuid, os.Getenv("ENCRYPTIONKEY"))
+	client := ConnectToMongo()
+	collection := client.Database("zinc").Collection("users")
+	var zincUser model.ZincUser
+
+	//Passing the bson.D{{}} as the filter matches documents in the collection
+	zincErr := collection.FindOne(context.TODO(), bson.M{"username": uuid}).Decode(&zincUser)
+	if zincErr != nil {
+		log.Fatal(zincErr)
+	}
+
+	password, _ := Decrypt(zincUser.Password)
+	defer CloseClientDB()
 	return username, password
 }
 

@@ -2,6 +2,9 @@ package routes
 
 import (
 	"context"
+	"crypto/aes"
+	"crypto/cipher"
+	"encoding/base64"
 	"fmt"
 	"os"
 
@@ -235,4 +238,46 @@ func Logout(jwt string) (string, error) {
 		panic(fmt.Sprintf("Error while logging out! %v\n", err))
 	}
 	return "", err
+}
+
+func EncodeToBase64(b []byte) string {
+	return base64.StdEncoding.EncodeToString(b)
+}
+
+// Encrypt method is to encrypt or hide any classified text
+func Encrypt(textToEncrypt string) (string, error) {
+	secretEncryption := os.Getenv("zincuserencryptionkey")
+	var bytes = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
+	block, err := aes.NewCipher([]byte(secretEncryption))
+	if err != nil {
+		return "", err
+	}
+	plainText := []byte(textToEncrypt)
+	cfb := cipher.NewCFBEncrypter(block, bytes)
+	cipherText := make([]byte, len(plainText))
+	cfb.XORKeyStream(cipherText, plainText)
+	return EncodeToBase64(cipherText), nil
+}
+
+func Decode(s string) []byte {
+	data, err := base64.StdEncoding.DecodeString(s)
+	if err != nil {
+		panic(err)
+	}
+	return data
+}
+
+// Decrypt method is to extract back the encrypted text
+func Decrypt(textToDecrypt string) (string, error) {
+	var bytes = []byte{35, 46, 57, 24, 85, 35, 24, 74, 87, 35, 88, 98, 66, 32, 14, 05}
+	secretEncryption := os.Getenv("zincuserencryptionkey")
+	block, err := aes.NewCipher([]byte(secretEncryption))
+	if err != nil {
+		return "", err
+	}
+	cipherText := Decode(textToDecrypt)
+	cfb := cipher.NewCFBDecrypter(block, bytes)
+	plainText := make([]byte, len(cipherText))
+	cfb.XORKeyStream(plainText, cipherText)
+	return string(plainText), nil
 }
