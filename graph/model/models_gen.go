@@ -48,14 +48,14 @@ type AuthorInput struct {
 }
 
 type CreateArticleInfo struct {
-	Title       *string   `json:"title"`
-	TitleCard   *File     `json:"titleCard"`
-	ContentData *string   `json:"contentData"`
-	DateWritten *string   `json:"dateWritten"`
-	URL         *string   `json:"url"`
-	Description *string   `json:"description"`
-	UUID        *string   `json:"uuid"`
-	Tags        []TagData `json:"tags"`
+	Title       *string   `json:"title,omitempty"`
+	TitleCard   *File     `json:"titleCard,omitempty"`
+	ContentData *string   `json:"contentData,omitempty"`
+	DateWritten *string   `json:"dateWritten,omitempty"`
+	URL         *string   `json:"url,omitempty"`
+	Description *string   `json:"description,omitempty"`
+	UUID        *string   `json:"uuid,omitempty"`
+	Tags        []TagData `json:"tags,omitempty"`
 	Jwt         string    `json:"jwt"`
 	ProjectUUID string    `json:"project_uuid"`
 }
@@ -78,7 +78,7 @@ type DeleteAllProjects struct {
 }
 
 type DeleteBucketInfo struct {
-	UUID        *string `json:"uuid"`
+	UUID        *string `json:"uuid,omitempty"`
 	Jwt         string  `json:"jwt"`
 	ProjectUUID string  `json:"project_uuid"`
 	Articlename string  `json:"articlename"`
@@ -104,16 +104,16 @@ type EditUser struct {
 	Jwt        string `json:"jwt"`
 	Role       string `json:"role"`
 	Name       string `json:"name"`
-	ProfilePic *File  `json:"profilePic"`
+	ProfilePic *File  `json:"profilePic,omitempty"`
 	Bio        string `json:"bio"`
 }
 
 type File struct {
-	Name        *string         `json:"name"`
-	FileData    *graphql.Upload `json:"fileData"`
-	ContentType *string         `json:"contentType"`
-	Description *string         `json:"description"`
-	URL         *string         `json:"url"`
+	Name        *string         `json:"name,omitempty"`
+	FileData    *graphql.Upload `json:"fileData,omitempty"`
+	ContentType *string         `json:"contentType,omitempty"`
+	Description *string         `json:"description,omitempty"`
+	URL         *string         `json:"url,omitempty"`
 }
 
 type FindArticlePrivateType struct {
@@ -144,10 +144,11 @@ type GetZincArticleInput struct {
 }
 
 type Image struct {
-	UUID string `json:"uuid"`
-	URL  string `json:"url"`
-	Type string `json:"type"`
-	Name string `json:"name"`
+	ProjectUUID string `json:"project_uuid"`
+	URL         string `json:"url"`
+	Type        string `json:"type"`
+	Name        string `json:"name"`
+	ArticleUUID string `json:"article_uuid"`
 }
 
 type LoginData struct {
@@ -174,19 +175,19 @@ type Tag struct {
 }
 
 type TagData struct {
-	Name *string `json:"name"`
+	Name *string `json:"name,omitempty"`
 }
 
 type UpdatedArticleInfo struct {
-	Title              *string   `json:"title"`
-	TitleCard          *File     `json:"titleCard"`
-	Author             *string   `json:"author"`
-	ContentData        *string   `json:"contentData"`
-	DateWritten        *string   `json:"dateWritten"`
-	URL                *string   `json:"url"`
-	Description        *string   `json:"description"`
-	UUID               *string   `json:"uuid"`
-	Tags               []TagData `json:"tags"`
+	Title              *string   `json:"title,omitempty"`
+	TitleCard          *File     `json:"titleCard,omitempty"`
+	Author             *string   `json:"author,omitempty"`
+	ContentData        *string   `json:"contentData,omitempty"`
+	DateWritten        *string   `json:"dateWritten,omitempty"`
+	URL                *string   `json:"url,omitempty"`
+	Description        *string   `json:"description,omitempty"`
+	UUID               *string   `json:"uuid,omitempty"`
+	Tags               []TagData `json:"tags,omitempty"`
 	Jwt                string    `json:"jwt"`
 	ProjectUUID        string    `json:"project_uuid"`
 	Originalfoldername string    `json:"originalfoldername"`
@@ -212,7 +213,7 @@ type UserCreation struct {
 	Jwt        string `json:"jwt"`
 	Role       string `json:"role"`
 	Name       string `json:"name"`
-	ProfilePic *File  `json:"profilePic"`
+	ProfilePic *File  `json:"profilePic,omitempty"`
 	Bio        string `json:"bio"`
 }
 

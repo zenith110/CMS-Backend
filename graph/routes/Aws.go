@@ -15,7 +15,6 @@ import (
 	"github.com/aws/aws-sdk-go/aws/session"
 	"github.com/aws/aws-sdk-go/service/s3"
 	"github.com/aws/aws-sdk-go/service/s3/s3manager"
-	"github.com/google/uuid"
 	"github.com/zenith110/CMS-Backend/graph/model"
 )
 
@@ -105,7 +104,7 @@ func UploadImageArticle(information map[string]any, jwt string) string {
 	if err != nil {
 		panic(fmt.Errorf("error has occured! %s", err))
 	}
-	image := model.Image{URL: URL, Type: contentType, Name: titleCardName, UUID: uuid.NewString()}
+	image := model.Image{URL: URL, Type: contentType, Name: titleCardName, ArticleUUID: imageUUID, ProjectUUID: projectUuid}
 	UploadImageDB(image, url, jwt, projectUuid)
 
 	zincData := fmt.Sprintf(`{
@@ -116,7 +115,7 @@ func UploadImageArticle(information map[string]any, jwt string) string {
 	CreateDocument(bucketName, zincData, imageUUID, username, password)
 	return url
 }
-func UploadFileToS3(input *model.CreateArticleInfo) string {
+func UploadFileToS3(input *model.CreateArticleInfo, zincpassword string) string {
 	session := CreateAWSSession()
 	s3ConnectionUploader := s3manager.NewUploader(session)
 	srcImage, _, err := image.Decode(input.TitleCard.FileData.File)
@@ -151,7 +150,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
 			"username":             username,
-			"password":             fmt.Sprintf("%s-%s", input.ProjectUUID, os.Getenv("ENCRYPTIONKEY")),
+			"password":             zincpassword,
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
@@ -167,7 +166,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 			"titleCardName":        *input.TitleCard.Name,
 			"contentType":          *input.TitleCard.ContentType,
 			"username":             input.ProjectUUID,
-			"password":             fmt.Sprintf("%s-%s", input.ProjectUUID, os.Getenv("ENCRYPTIONKEY")),
+			"password":             zincpassword,
 			"projectuuid":          input.ProjectUUID,
 			"finalImage":           finalImage,
 			"imageUUID":            *input.UUID,
@@ -176,7 +175,7 @@ func UploadFileToS3(input *model.CreateArticleInfo) string {
 	}
 }
 
-func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo) string {
+func UploadUpdatedFileToS3(input *model.UpdatedArticleInfo, zincpassword string) string {
 	session := CreateAWSSession()
 	s3ConnectionUploader := s3manager.NewUploader(session)
 	srcImage, _, err := image.Decode(input.TitleCard.FileData.File)
