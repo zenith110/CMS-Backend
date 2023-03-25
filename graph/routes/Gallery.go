@@ -18,9 +18,7 @@ import (
 
 func UploadImageDB(image model.Image, url string, jwt string, uuid string) (model.Image, error) {
 	client := ConnectToMongo()
-	redisClient := RedisClientInstation()
-	redisData := RedisUserInfo(jwt, redisClient)
-	collection := client.Database(fmt.Sprintf("%s-%s", redisData["username"], uuid)).Collection("images")
+	collection := client.Database(fmt.Sprintf("%s", uuid)).Collection("images")
 	res, err := collection.InsertOne(context.TODO(), image)
 	if err != nil {
 		log.Fatal(err)

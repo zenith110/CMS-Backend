@@ -36,7 +36,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		tags = append(tags, tag)
 		tagsString = append(tagsString, *input.Tags[tagData].Name)
 	}
-	imageURL := UploadFileToS3(input)
+	imageURL := UploadFileToS3(input, zincPassword)
 	log.WithFields(log.Fields{
 		"article state": "post-insert mongo data",
 	}).Info("Article has been created, inserting into zinc!")
@@ -153,7 +153,7 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 		tags = append(tags, tag)
 		tagsString = append(tagsString, *input.Tags[tagData].Name)
 	}
-	imageURL := UploadUpdatedFileToS3(input)
+	imageURL := UploadUpdatedFileToS3(input, password)
 	client := ConnectToMongo()
 	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
 

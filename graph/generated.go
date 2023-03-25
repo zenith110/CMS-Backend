@@ -80,10 +80,11 @@ type ComplexityRoot struct {
 	}
 
 	Image struct {
-		Name func(childComplexity int) int
-		Type func(childComplexity int) int
-		URL  func(childComplexity int) int
-		UUID func(childComplexity int) int
+		ArticleUUID func(childComplexity int) int
+		Name        func(childComplexity int) int
+		ProjectUUID func(childComplexity int) int
+		Type        func(childComplexity int) int
+		URL         func(childComplexity int) int
 	}
 
 	LoginData struct {
@@ -333,12 +334,26 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.GalleryImages.Total(childComplexity), true
 
+	case "Image.article_uuid":
+		if e.complexity.Image.ArticleUUID == nil {
+			break
+		}
+
+		return e.complexity.Image.ArticleUUID(childComplexity), true
+
 	case "Image.name":
 		if e.complexity.Image.Name == nil {
 			break
 		}
 
 		return e.complexity.Image.Name(childComplexity), true
+
+	case "Image.project_uuid":
+		if e.complexity.Image.ProjectUUID == nil {
+			break
+		}
+
+		return e.complexity.Image.ProjectUUID(childComplexity), true
 
 	case "Image.type":
 		if e.complexity.Image.Type == nil {
@@ -353,13 +368,6 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 		}
 
 		return e.complexity.Image.URL(childComplexity), true
-
-	case "Image.uuid":
-		if e.complexity.Image.UUID == nil {
-			break
-		}
-
-		return e.complexity.Image.UUID(childComplexity), true
 
 	case "LoginData.jwt":
 		if e.complexity.LoginData.Jwt == nil {
@@ -2053,14 +2061,16 @@ func (ec *executionContext) fieldContext_GalleryImages_images(ctx context.Contex
 		IsResolver: false,
 		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
 			switch field.Name {
-			case "uuid":
-				return ec.fieldContext_Image_uuid(ctx, field)
+			case "project_uuid":
+				return ec.fieldContext_Image_project_uuid(ctx, field)
 			case "url":
 				return ec.fieldContext_Image_url(ctx, field)
 			case "type":
 				return ec.fieldContext_Image_type(ctx, field)
 			case "name":
 				return ec.fieldContext_Image_name(ctx, field)
+			case "article_uuid":
+				return ec.fieldContext_Image_article_uuid(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Image", field.Name)
 		},
@@ -2112,8 +2122,8 @@ func (ec *executionContext) fieldContext_GalleryImages_total(ctx context.Context
 	return fc, nil
 }
 
-func (ec *executionContext) _Image_uuid(ctx context.Context, field graphql.CollectedField, obj *model.Image) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Image_uuid(ctx, field)
+func (ec *executionContext) _Image_project_uuid(ctx context.Context, field graphql.CollectedField, obj *model.Image) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Image_project_uuid(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -2126,7 +2136,7 @@ func (ec *executionContext) _Image_uuid(ctx context.Context, field graphql.Colle
 	}()
 	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
 		ctx = rctx // use context from middleware stack in children
-		return obj.UUID, nil
+		return obj.ProjectUUID, nil
 	})
 	if err != nil {
 		ec.Error(ctx, err)
@@ -2143,7 +2153,7 @@ func (ec *executionContext) _Image_uuid(ctx context.Context, field graphql.Colle
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Image_uuid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Image_project_uuid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Image",
 		Field:      field,
@@ -2276,6 +2286,50 @@ func (ec *executionContext) _Image_name(ctx context.Context, field graphql.Colle
 }
 
 func (ec *executionContext) fieldContext_Image_name(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Image",
+		Field:      field,
+		IsMethod:   false,
+		IsResolver: false,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Image_article_uuid(ctx context.Context, field graphql.CollectedField, obj *model.Image) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Image_article_uuid(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return obj.ArticleUUID, nil
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Image_article_uuid(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Image",
 		Field:      field,
@@ -7908,9 +7962,9 @@ func (ec *executionContext) _Image(ctx context.Context, sel ast.SelectionSet, ob
 		switch field.Name {
 		case "__typename":
 			out.Values[i] = graphql.MarshalString("Image")
-		case "uuid":
+		case "project_uuid":
 
-			out.Values[i] = ec._Image_uuid(ctx, field, obj)
+			out.Values[i] = ec._Image_project_uuid(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++
@@ -7932,6 +7986,13 @@ func (ec *executionContext) _Image(ctx context.Context, sel ast.SelectionSet, ob
 		case "name":
 
 			out.Values[i] = ec._Image_name(ctx, field, obj)
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "article_uuid":
+
+			out.Values[i] = ec._Image_article_uuid(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

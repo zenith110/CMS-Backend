@@ -167,10 +167,11 @@ input UpdatedArticleInfo{
 }
 
 type Image {
-  uuid: String!
+  project_uuid: String!
   url: String!
   type: String!
   name: String!
+  article_uuid: String!
 }
 
 input AuthorInput {

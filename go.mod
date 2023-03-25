@@ -3,7 +3,7 @@ module github.com/zenith110/CMS-Backend
 go 1.20
 
 require (
-	github.com/99designs/gqlgen v0.17.26
+	github.com/99designs/gqlgen v0.17.27
 	github.com/aws/aws-sdk-go v1.44.198
 	github.com/go-chi/chi v1.5.4
 	github.com/go-redis/redis v6.15.9+incompatible
