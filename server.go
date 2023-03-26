@@ -36,6 +36,7 @@ func main() {
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
+			AllowedHeaders:   []string{"Content-Type", "Bearer", "Bearer ", "content-type", "Origin"},
 		}).Handler)
 	} else if environment == "LOCAL" {
 		router.Use(cors.New(cors.Options{
