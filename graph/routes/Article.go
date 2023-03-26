@@ -26,6 +26,8 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		panic("Unauthorized!")
 	}
 	username := redisData["username"]
+	name := redisData["name"]
+	profilePicture := redisData["profilePicture"]
 	zincUsername, zincPassword := ZincLogin(input.ProjectUUID)
 	var tags []model.Tag
 	var tagsString []string
@@ -52,7 +54,9 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"TitleCard":   "%s",
 		"Tags":        "%s",
 		"Project": 	   "%s"
-	}`, *input.Title, username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID)
+		"Name": 	   "%s",
+		"ProfilePicture": "%s"
+	}`, *input.Title, username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID, name, profilePicture)
 
 	log.WithFields(log.Fields{
 		"article state": "created mongodb instance",

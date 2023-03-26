@@ -101,6 +101,7 @@ type User{
   projects: Projects!
   username: String!
   uuid: String!
+  name: String!
 }
 
 type Users{
@@ -185,6 +186,7 @@ type Author {
   name: String!
   profile: String!
   picture: String!
+  username: String!
 }
 type Article {
   title: String!

@@ -9,9 +9,11 @@ import (
 )
 
 type UserData struct {
-	Password string `json:"password"`
-	Role     string `json:"role"`
-	Username string `json:"username"`
+	Password       string `json:"password"`
+	Role           string `json:"role"`
+	Username       string `json:"username"`
+	Name           string `json:"name"`
+	ProfilePicture string `json:"profilePicture"`
 }
 
 func RedisClientInstation() *redis.Client {
@@ -45,10 +47,14 @@ func RedisUserInfo(jwt string, redisClient *redis.Client) map[string]string {
 	username := user.Username
 	password := user.Password
 	role := user.Role
+	name := user.Name
+	profilePicture := user.ProfilePicture
 	redisData := map[string]string{
-		"username": username,
-		"password": password,
-		"role":     role,
+		"username":       username,
+		"password":       password,
+		"role":           role,
+		"name":           name,
+		"profilePicture": profilePicture,
 	}
 	return redisData
 }

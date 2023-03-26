@@ -36,16 +36,18 @@ type Zinc struct {
 			Score     float64   `json:"_score"`
 			Timestamp time.Time `json:"@timestamp"`
 			Source    struct {
-				ContentData string    `json:"ContentData"`
-				DateWritten time.Time `json:"DateWritten"`
-				Description string    `json:"Description"`
-				Project     string    `json:"Project"`
-				Tags        string    `json:"Tags"`
-				Title       string    `json:"Title"`
-				TitleCard   string    `json:"TitleCard"`
-				UUID        string    `json:"UUID"`
-				URL         string    `json:"Url"`
-				Username    string    `json:"Username"`
+				ContentData    string    `json:"ContentData"`
+				DateWritten    time.Time `json:"DateWritten"`
+				Description    string    `json:"Description"`
+				Project        string    `json:"Project"`
+				Tags           string    `json:"Tags"`
+				Title          string    `json:"Title"`
+				TitleCard      string    `json:"TitleCard"`
+				UUID           string    `json:"UUID"`
+				URL            string    `json:"Url"`
+				Username       string    `json:"Username"`
+				Name           string    `json:"Name"`
+				ProfilePicture string    `json:"ProfilePicture"`
 			} `json:"_source"`
 		} `json:"hits"`
 	} `json:"hits"`
@@ -105,7 +107,6 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 	var articlesStorage []model.Article
 	var zinc Zinc
 	data := SearchDocuments(fmt.Sprintf("%s-articles", username), input.Keyword, username, password)
-	fmt.Printf("%s\n", data)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))
@@ -116,13 +117,12 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 	var tags []model.Tag
 
 	for hit := range hits {
-		author := model.Author{Name: hits[hit].Source.Username, Profile: "", Picture: ""}
+		author := model.Author{Name: hits[hit].Source.Name, Profile: "", Picture: hits[hit].Source.ProfilePicture, Username: hits[hit].Source.Username}
 		article := model.Article{Author: &author, ContentData: hits[hit].Source.ContentData, DateWritten: hits[hit].Source.DateWritten.String(), Description: hits[hit].Source.Description, Tags: tags, Title: hits[hit].Source.Title, TitleCard: hits[hit].Source.TitleCard, UUID: hits[hit].Source.UUID, URL: hits[hit].Source.URL}
 		articlesStorage = append(articlesStorage, article)
 		totalArticles += 1
 	}
 
-	// var articles model.Articles
 	var articles = model.Articles{Article: articlesStorage, Total: totalArticles}
 	log.Println(articlesStorage)
 	return &articles, zincError

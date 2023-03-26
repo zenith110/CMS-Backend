@@ -78,7 +78,7 @@ func CreateUser(input *model.UserCreation) (*model.User, error) {
 		hashedPassword := hashAndSalt([]byte(password))
 		frontendUri := os.Getenv("CMSFRONTENDURI")
 		profilePic := UploadAvatarImageCreation(input)
-		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: profilePic, ProfileLink: fmt.Sprintf("%s/%s", frontendUri, username), Role: input.Role, Projects: &projects, Username: username, UUID: input.UUID, Bio: input.Bio}
+		user := model.User{Email: email, HashedPassword: hashedPassword, ProfilePicture: profilePic, ProfileLink: fmt.Sprintf("%s/%s", frontendUri, username), Role: input.Role, Projects: &projects, Username: username, UUID: input.UUID, Bio: input.Bio, Name: input.Name}
 		_, dbnormalInserterr := dbnormal.InsertOne(context.TODO(), user)
 		if dbnormalInserterr != nil {
 			fmt.Printf("error is %v", dbnormalInserterr)
@@ -183,9 +183,11 @@ func Login(username string, password string) (*model.LoginData, error) {
 
 	if passwordCheck == true {
 		userInfo := map[string]string{
-			"username": user.Username,
-			"password": password,
-			"role":     user.Role,
+			"username":       user.Username,
+			"password":       password,
+			"role":           user.Role,
+			"name":           user.Name,
+			"profilePicture": user.ProfilePicture,
 		}
 		userData, marshalErr := MarshalBinary(userInfo)
 		if marshalErr != nil {

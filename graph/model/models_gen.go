@@ -38,9 +38,10 @@ type ArticlesPrivate struct {
 }
 
 type Author struct {
-	Name    string `json:"name"`
-	Profile string `json:"profile"`
-	Picture string `json:"picture"`
+	Name     string `json:"name"`
+	Profile  string `json:"profile"`
+	Picture  string `json:"picture"`
+	Username string `json:"username"`
 }
 
 type AuthorInput struct {
@@ -203,6 +204,7 @@ type User struct {
 	Projects       *Projects `json:"projects"`
 	Username       string    `json:"username"`
 	UUID           string    `json:"uuid"`
+	Name           string    `json:"name"`
 }
 
 type UserCreation struct {
