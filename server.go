@@ -21,12 +21,11 @@ import (
 const defaultPort = "8080"
 
 func main() {
-
 	port := os.Getenv("BACKEND_PORT")
 	domainsString := os.Getenv("DOMAINS")
 	environment := os.Getenv("ENV")
 	domains := strings.Split(domainsString, ",")
-	fmt.Printf("Domains accepted are %s", domains)
+	log.Printf("Domains accepted are %s", domains)
 	if port == "" {
 		port = defaultPort
 	}
