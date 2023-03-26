@@ -53,7 +53,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 		"UUID":        "%s",
 		"TitleCard":   "%s",
 		"Tags":        "%s",
-		"Project": 	   "%s"
+		"Project": 	   "%s",
 		"Name": 	   "%s",
 		"ProfilePicture": "%s"
 	}`, *input.Title, username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID, name, profilePicture)
