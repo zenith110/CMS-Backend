@@ -30,6 +30,7 @@ func main() {
 	}
 	router := chi.NewRouter()
 	router.Use()
+	log.Printf("Environment is %s", environment)
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
 			AllowedOrigins:   []string{"https://*"},
@@ -44,6 +45,7 @@ func main() {
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
+			AllowedHeaders:   []string{"*"},
 		}).Handler)
 	}
 
