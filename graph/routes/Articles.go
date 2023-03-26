@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/s3"
@@ -15,36 +16,39 @@ import (
 )
 
 type Zinc struct {
-	Took     int64 `json:"took"`
-	TimedOut bool  `json:"timed_out"`
-	Hits     Hits  `json:"hits"`
-}
-
-type Hits struct {
-	Total    Total `json:"total"`
-	MaxScore int64 `json:"max_score"`
-	Hits     []Hit `json:"hits"`
-}
-
-type Hit struct {
-	Index     string `json:"_index"`
-	Type      string `json:"_type"`
-	ID        string `json:"_id"`
-	Score     int64  `json:"_score"`
-	Timestamp string `json:"@timestamp"`
-	Source    Source `json:"_source"`
-}
-
-type Source struct {
-	Author      string `json:"Author"`
-	ContentData string `json:"ContentData"`
-	DateWritten string `json:"DateWritten"`
-	Description string `json:"Description"`
-	Tags        string `json:"Tags"`
-	Title       string `json:"Title"`
-	TitleCard   string `json:"TitleCard"`
-	UUID        string `json:"UUID"`
-	URL         string `json:"Url"`
+	Took     int  `json:"took"`
+	TimedOut bool `json:"timed_out"`
+	Shards   struct {
+		Total      int `json:"total"`
+		Successful int `json:"successful"`
+		Skipped    int `json:"skipped"`
+		Failed     int `json:"failed"`
+	} `json:"_shards"`
+	Hits struct {
+		Total struct {
+			Value int `json:"value"`
+		} `json:"total"`
+		MaxScore float64 `json:"max_score"`
+		Hits     []struct {
+			Index     string    `json:"_index"`
+			Type      string    `json:"_type"`
+			ID        string    `json:"_id"`
+			Score     float64   `json:"_score"`
+			Timestamp time.Time `json:"@timestamp"`
+			Source    struct {
+				ContentData string    `json:"ContentData"`
+				DateWritten time.Time `json:"DateWritten"`
+				Description string    `json:"Description"`
+				Project     string    `json:"Project"`
+				Tags        string    `json:"Tags"`
+				Title       string    `json:"Title"`
+				TitleCard   string    `json:"TitleCard"`
+				UUID        string    `json:"UUID"`
+				URL         string    `json:"Url"`
+				Username    string    `json:"Username"`
+			} `json:"_source"`
+		} `json:"hits"`
+	} `json:"hits"`
 }
 
 type Total struct {
@@ -101,19 +105,19 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 	var articlesStorage []model.Article
 	var zinc Zinc
 	data := SearchDocuments(fmt.Sprintf("%s-articles", username), input.Keyword, username, password)
+	fmt.Printf("%s\n", data)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))
 	}
 
 	hits := zinc.Hits.Hits
-	log.Println(hits)
 	totalArticles := 0
 	var tags []model.Tag
 
 	for hit := range hits {
-		author := model.Author{Name: hits[hit].Source.Author, Profile: "", Picture: ""}
-		article := model.Article{Author: &author, ContentData: hits[hit].Source.ContentData, DateWritten: hits[hit].Source.DateWritten, Description: hits[hit].Source.Description, Tags: tags, Title: hits[hit].Source.Title, TitleCard: hits[hit].Source.TitleCard, UUID: hits[hit].Source.UUID, URL: hits[hit].Source.URL}
+		author := model.Author{Name: hits[hit].Source.Username, Profile: "", Picture: ""}
+		article := model.Article{Author: &author, ContentData: hits[hit].Source.ContentData, DateWritten: hits[hit].Source.DateWritten.String(), Description: hits[hit].Source.Description, Tags: tags, Title: hits[hit].Source.Title, TitleCard: hits[hit].Source.TitleCard, UUID: hits[hit].Source.UUID, URL: hits[hit].Source.URL}
 		articlesStorage = append(articlesStorage, article)
 		totalArticles += 1
 	}
