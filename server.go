@@ -32,7 +32,7 @@ func main() {
 	router.Use()
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
-			AllowedOrigins:   []string{"*"},
+			AllowedOrigins:   []string{"https://*"},
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
