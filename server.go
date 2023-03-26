@@ -50,6 +50,7 @@ func main() {
 	srv.AddTransport(&transport.Websocket{
 		Upgrader: websocket.Upgrader{
 			CheckOrigin: func(r *http.Request) bool {
+				log.Printf("Domain that is sending the request is %s", r.Host)
 				// Check against your desired domains here
 				return slices.Contains(domains, r.Host)
 			},
