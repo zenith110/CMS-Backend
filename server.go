@@ -4,7 +4,6 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"fmt"
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
