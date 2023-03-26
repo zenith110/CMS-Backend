@@ -121,7 +121,8 @@ func (r *queryResolver) GetProjects(ctx context.Context, input *model.GetProject
 
 // ArticlePublic is the resolver for the articlePublic field.
 func (r *queryResolver) ArticlePublic(ctx context.Context, input *model.FindArticlePublicType) (*model.Article, error) {
-	panic(fmt.Errorf("not implemented: ArticlePublic - articlePublic"))
+	article, err := routes.FindArticlePublic(input)
+	return article, err
 }
 
 // GetUsers is the resolver for the getUsers field.

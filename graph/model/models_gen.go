@@ -125,7 +125,7 @@ type FindArticlePrivateType struct {
 
 type FindArticlePublicType struct {
 	ProjectUUID string `json:"project_uuid"`
-	Title       string `json:"title"`
+	ArticleUUID string `json:"article_uuid"`
 }
 
 type GalleryImages struct {

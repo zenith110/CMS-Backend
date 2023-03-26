@@ -7349,7 +7349,7 @@ func (ec *executionContext) unmarshalInputFindArticlePublicType(ctx context.Cont
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"project_uuid", "title"}
+	fieldsInOrder := [...]string{"project_uuid", "article_uuid"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7364,11 +7364,11 @@ func (ec *executionContext) unmarshalInputFindArticlePublicType(ctx context.Cont
 			if err != nil {
 				return it, err
 			}
-		case "title":
+		case "article_uuid":
 			var err error
 
-			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			it.Title, err = ec.unmarshalNString2string(ctx, v)
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("article_uuid"))
+			it.ArticleUUID, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}

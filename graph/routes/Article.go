@@ -129,6 +129,19 @@ func FindArticle(input *model.FindArticlePrivateType) (*model.Article, error) {
 	}
 	return &article, articleErr
 }
+
+func FindArticlePublic(input *model.FindArticlePublicType) (*model.Article, error) {
+	client := ConnectToMongo()
+	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
+	var article model.Article
+
+	//Passing the bson.D{{}} as the filter matches documents in the collection
+	articleErr := collection.FindOne(context.TODO(), bson.M{"uuid": input.ArticleUUID}).Decode(&article)
+	if articleErr != nil {
+		log.Fatal(articleErr)
+	}
+	return &article, articleErr
+}
 func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	redisClient := RedisClientInstation()

@@ -64,7 +64,7 @@ input FindArticlePrivateType{
 }
 input FindArticlePublicType{
   project_uuid: String!
-  title: String!
+  article_uuid: String!
 }
 input DeleteProjectType{
   jwt: String!
