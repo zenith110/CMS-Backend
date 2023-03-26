@@ -14,6 +14,7 @@ import (
 	"github.com/zenith110/CMS-Backend/graph"
 	generated "github.com/zenith110/CMS-Backend/graph"
 	"github.com/zenith110/CMS-Backend/graph/routes"
+	"strings"
 )
 
 const defaultPort = "8080"
@@ -21,9 +22,10 @@ const defaultPort = "8080"
 func main() {
 
 	port := os.Getenv("BACKEND_PORT")
-	domain := os.Getenv("DOMAIN")
+	domainsString := os.Getenv("DOMAINS")
 	environment := os.Getenv("ENV")
-
+	domains := strings.Split(domainsString, ",")
+	fmt.Printf("Domains accepted are %s", domains)
 	if port == "" {
 		port = defaultPort
 	}
@@ -31,7 +33,7 @@ func main() {
 	router.Use()
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
-			AllowedOrigins:   []string{domain},
+			AllowedOrigins:   domains,
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
