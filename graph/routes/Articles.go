@@ -107,6 +107,7 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 	}
 
 	hits := zinc.Hits.Hits
+	log.Println(hits)
 	totalArticles := 0
 	var tags []model.Tag
 
@@ -119,6 +120,7 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 
 	// var articles model.Articles
 	var articles = model.Articles{Article: articlesStorage, Total: totalArticles}
+	log.Println(articlesStorage)
 	return &articles, zincError
 }
 func DeleteArticles(input *model.DeleteAllArticlesInput) (string, error) {
