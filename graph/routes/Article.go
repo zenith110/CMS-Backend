@@ -64,7 +64,7 @@ func CreateArticle(input *model.CreateArticleInfo) (*model.Article, error) {
 	CreateDocument(fmt.Sprintf("%s-articles", zincUsername), zincData, *input.UUID, zincUsername, zincPassword)
 	client := ConnectToMongo()
 	collection := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles")
-	author := model.Author{Name: username}
+	author := model.Author{Name: name, Picture: profilePicture, Username: username}
 	article := model.Article{Title: *input.Title, Author: &author, ContentData: *input.ContentData, DateWritten: *input.DateWritten, URL: *input.URL, Description: *input.Description, UUID: *input.UUID, Tags: tags, TitleCard: imageURL}
 	res, err := collection.InsertOne(context.TODO(), article)
 	if err != nil {
