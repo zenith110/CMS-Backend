@@ -99,7 +99,7 @@ func SearchDocuments(indexName string, searchTerm string, userName string, passw
 
 	}
 	query := fmt.Sprintf(`{
-        "search_type": "match",
+        "search_type": "fuzzy",
         "query":
         {
             "term": "%s"
