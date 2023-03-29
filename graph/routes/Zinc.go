@@ -41,11 +41,11 @@ func CreateDocument(index string, data string, uuid string, userName string, pas
 	}).Info(fmt.Sprintf("document data: %s", string(body)))
 
 }
-func UpdateDocument(index string, data string, uuid string, userName string, password string) {
+func UpdateDocument(index string, data string, userName string, password string, uuid string) {
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	zincDocumentUrl := fmt.Sprintf("%s/api/%s/_update/%s", zincBaseUrl, index, uuid)
 
-	req, err := http.NewRequest("PUT", zincDocumentUrl, strings.NewReader(data))
+	req, err := http.NewRequest("POST", zincDocumentUrl, strings.NewReader(data))
 	if err != nil {
 		log.Fatal(err)
 	}

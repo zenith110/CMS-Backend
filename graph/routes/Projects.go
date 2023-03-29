@@ -127,6 +127,11 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	DeleteBucket(s3sc, bucketName)
 	DeleteIndex(fmt.Sprintf("%s-articles", username), username, password)
 	DeleteIndex(bucketName, username, password)
+
+	// Drop the image collection for the project
+	if err := client.Database(username).Collection("images").Drop(context.TODO()); err != nil {
+		log.Fatal(err)
+	}
 	DeleteZincUser(input.UUID, username, password)
 	var err error
 	return fmt.Sprintf("Deleted project %s", input.Project), err

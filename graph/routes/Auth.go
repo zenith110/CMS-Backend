@@ -58,6 +58,7 @@ func CreateDefaultAdmin() {
 		fmt.Printf("%s has an account associated already!!\n", os.Getenv("ADMINUSER"))
 	}
 }
+
 func CreateUser(input *model.UserCreation) (*model.User, error) {
 	redisClient := RedisClientInstation()
 	redisData := RedisUserInfo(input.Jwt, redisClient)
