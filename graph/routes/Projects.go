@@ -132,6 +132,9 @@ func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	if err := client.Database(username).Collection("images").Drop(context.TODO()); err != nil {
 		log.Fatal(err)
 	}
+	if err := client.Database(username).Collection("articles").Drop(context.TODO()); err != nil {
+		log.Fatal(err)
+	}
 	DeleteZincUser(input.UUID, username, password)
 	var err error
 	return fmt.Sprintf("Deleted project %s", input.Project), err
