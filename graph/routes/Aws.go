@@ -83,8 +83,6 @@ func UploadImageArticle(information map[string]any, jwt string) string {
 	URL := information["URL"].(string)
 	titleCardName := information["titleCardName"].(string)
 	contentType := information["contentType"].(string)
-	username := information["username"].(string)
-	password := information["password"].(string)
 	projectUuid := information["projectuuid"].(string)
 	finalImage := information["finalImage"].(*bytes.Reader)
 	imageUUID := information["imageUUID"].(string)
