@@ -255,7 +255,7 @@ func UploadAvatarImageCreation(input *model.UserCreation) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-graphql-cms-profilepics.s3.%s.amazonaws.com/%s", input.Username, os.Getenv("AWS_REGION"), *input.ProfilePic.Name)
+		url := fmt.Sprintf("https://graphql-cms-profilepics.s3.%s.amazonaws.com/%s/%s", os.Getenv("AWS_REGION"), input.Username, *input.ProfilePic.Name)
 		return url
 	} else {
 		CreateProjectBucket(s3sc, bucketName)
@@ -270,7 +270,7 @@ func UploadAvatarImageCreation(input *model.UserCreation) string {
 		if err != nil {
 			panic(fmt.Errorf("error has occured! %s", err))
 		}
-		url := fmt.Sprintf("https://%s-graphql-cms-profilepics.s3.%s.amazonaws.com/%s", input.Username, os.Getenv("AWS_REGION"), *input.ProfilePic.Name)
+		url := fmt.Sprintf("https://graphql-cms-profilepics.s3.%s.amazonaws.com/%s/%s", os.Getenv("AWS_REGION"), input.Username, *input.ProfilePic.Name)
 		return url
 	}
 }

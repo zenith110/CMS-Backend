@@ -153,7 +153,7 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	bucketName := fmt.Sprintf("%s-images", username)
 	session := CreateAWSSession()
 	s3sc := s3.New(session)
-	fmt.Print(input.Originalfoldername)
+
 	iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
 		Bucket: aws.String(bucketName),
 		Prefix: &input.Originalfoldername,
@@ -187,18 +187,22 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 	if ArticleUpdateerr != nil {
 		panic(fmt.Errorf("error has occured: %v", ArticleUpdateerr))
 	}
-
+	name := redisData["name"]
+	profilePicture := redisData["profilePicture"]
 	zincData := fmt.Sprintf(`{
 		"Title":       "%s",
-		"Author":      "%s",
+		"Username":    "%s",
 		"ContentData": "%s",
 		"DateWritten": "%s",
 		"Url":         "%s",
 		"Description": "%s",
 		"UUID":        "%s",
 		"TitleCard":   "%s",
-		"Tags":        "%s"
-	}`, *input.Title, *input.Author, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","))
+		"Tags":        "%s",
+		"Project": 	   "%s",
+		"Name": 	   "%s",
+		"ProfilePicture": "%s"
+	}`, *input.Title, username, *input.ContentData, *input.DateWritten, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID, name, profilePicture)
 	UpdateDocument(fmt.Sprintf("%s-articles", zincusername), zincData, *input.UUID, zincusername, password)
 	return &article, ArticleUpdateerr
 }

@@ -141,11 +141,10 @@ func DeleteArticles(input *model.DeleteAllArticlesInput) (string, error) {
 		if err := client.Database(fmt.Sprintf("%s", input.ProjectUUID)).Collection("articles").Drop(context.TODO()); err != nil {
 			log.Fatal(err)
 		}
-		articlesIndex := fmt.Sprintf("%s-%s-articles", redisData["username"], input.ProjectUUID)
-		imagesIndex := fmt.Sprintf("%s-%s-images", redisData["username"], input.ProjectUUID)
 		zincusername, password := ZincLogin(input.ProjectUUID)
+		articlesIndex := fmt.Sprintf("%s-articles", zincusername)
+		imagesIndex := fmt.Sprintf("%s-images", zincusername)
 		DeleteIndex(articlesIndex, zincusername, password)
-		DeleteIndex(imagesIndex, zincusername, password)
 		session := CreateAWSSession()
 		s3sc := s3.New(session)
 		iter := s3manager.NewDeleteListIterator(s3sc, &s3.ListObjectsInput{
