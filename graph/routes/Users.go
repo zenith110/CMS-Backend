@@ -21,12 +21,13 @@ func FetchUsers(jwt string) (*model.Users, error) {
 	if message == "Unauthorized!" || redisData["role"] == "Reader" {
 		panic("Unauthorized!")
 	}
-
+	username := redisData["username"]
+	usernamesNotToDisplay := []string{username, os.Getenv("ADMINUSER")}
 	// Create a temporary array of pointers for Article
 	var usersStorage []model.User
 	client := ConnectToMongo()
 	db := client.Database("blog").Collection("Users")
-	filter := bson.M{"username": bson.M{"$ne": os.Getenv("ADMINUSER")}}
+	filter := bson.M{"username": bson.M{"$nin": usernamesNotToDisplay}}
 	findOptions := options.Find()
 	//Passing the bson.D{{}} as the filter matches documents in the collection
 	cur, err := db.Find(context.TODO(), filter, findOptions)

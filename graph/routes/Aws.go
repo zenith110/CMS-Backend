@@ -106,13 +106,6 @@ func UploadImageArticle(information map[string]any, jwt string) string {
 	}
 	image := model.Image{URL: URL, Type: contentType, Name: titleCardName, ArticleUUID: imageUUID, ProjectUUID: projectUuid}
 	UploadImageDB(image, url, jwt, projectUuid)
-
-	zincData := fmt.Sprintf(`{
-		"Url": "%s",
-		"Type": "%s",
-		"Name": "%s"
-	}`, url, contentType, titleCardName)
-	CreateDocument(bucketName, zincData, imageUUID, username, password)
 	return url
 }
 func UploadFileToS3(input *model.CreateArticleInfo, zincpassword string) string {
