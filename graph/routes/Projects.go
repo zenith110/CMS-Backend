@@ -100,6 +100,10 @@ func GetProjects(input *model.GetProjectType) (*model.Projects, error) {
 	defer CloseClientDB()
 	return &projects, err
 }
+
+/*
+Delete a project and all its articles and assets.
+*/
 func DeleteProject(input *model.DeleteProjectType) (string, error) {
 	message, _ := JWTValidityCheck(input.Jwt)
 	redisClient := RedisClientInstation()
