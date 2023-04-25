@@ -89,6 +89,12 @@ func (r *mutationResolver) EditUser(ctx context.Context, input *model.EditUser) 
 	panic(fmt.Errorf("not implemented: EditUser - editUser"))
 }
 
+// UploadArticleImage is the resolver for the uploadArticleImage field.
+func (r *mutationResolver) UploadArticleImage(ctx context.Context, input *model.UploadArticleImageInput) (string, error) {
+	articleImageURL, err := routes.UploadArticleImages(input)
+	return articleImageURL, err
+}
+
 // ArticlePrivate is the resolver for the articlePrivate field.
 func (r *queryResolver) ArticlePrivate(ctx context.Context, input *model.FindArticlePrivateType) (*model.Article, error) {
 	article, err := routes.FindArticle(input)

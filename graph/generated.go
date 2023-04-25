@@ -94,19 +94,20 @@ type ComplexityRoot struct {
 	}
 
 	Mutation struct {
-		CreateArticle     func(childComplexity int, input *model.CreateArticleInfo) int
-		CreateProject     func(childComplexity int, input *model.CreateProjectInput) int
-		CreateUser        func(childComplexity int, input *model.UserCreation) int
-		DeleteAllArticles func(childComplexity int, input *model.DeleteAllArticlesInput) int
-		DeleteAllUsers    func(childComplexity int, jwt string) int
-		DeleteArticle     func(childComplexity int, input *model.DeleteBucketInfo) int
-		DeleteProject     func(childComplexity int, input *model.DeleteProjectType) int
-		DeleteProjects    func(childComplexity int, input *model.DeleteAllProjects) int
-		DeleteUser        func(childComplexity int, input *model.DeleteUser) int
-		EditUser          func(childComplexity int, input *model.EditUser) int
-		LoginUser         func(childComplexity int, username string, password string) int
-		Logout            func(childComplexity int, jwt string) int
-		UpdateArticle     func(childComplexity int, input *model.UpdatedArticleInfo) int
+		CreateArticle      func(childComplexity int, input *model.CreateArticleInfo) int
+		CreateProject      func(childComplexity int, input *model.CreateProjectInput) int
+		CreateUser         func(childComplexity int, input *model.UserCreation) int
+		DeleteAllArticles  func(childComplexity int, input *model.DeleteAllArticlesInput) int
+		DeleteAllUsers     func(childComplexity int, jwt string) int
+		DeleteArticle      func(childComplexity int, input *model.DeleteBucketInfo) int
+		DeleteProject      func(childComplexity int, input *model.DeleteProjectType) int
+		DeleteProjects     func(childComplexity int, input *model.DeleteAllProjects) int
+		DeleteUser         func(childComplexity int, input *model.DeleteUser) int
+		EditUser           func(childComplexity int, input *model.EditUser) int
+		LoginUser          func(childComplexity int, username string, password string) int
+		Logout             func(childComplexity int, jwt string) int
+		UpdateArticle      func(childComplexity int, input *model.UpdatedArticleInfo) int
+		UploadArticleImage func(childComplexity int, input *model.UploadArticleImageInput) int
 	}
 
 	Project struct {
@@ -178,6 +179,7 @@ type MutationResolver interface {
 	DeleteUser(ctx context.Context, input *model.DeleteUser) (string, error)
 	DeleteAllUsers(ctx context.Context, jwt string) (string, error)
 	EditUser(ctx context.Context, input *model.EditUser) (string, error)
+	UploadArticleImage(ctx context.Context, input *model.UploadArticleImageInput) (string, error)
 }
 type QueryResolver interface {
 	ArticlePrivate(ctx context.Context, input *model.FindArticlePrivateType) (*model.Article, error)
@@ -549,6 +551,18 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Mutation.UpdateArticle(childComplexity, args["input"].(*model.UpdatedArticleInfo)), true
 
+	case "Mutation.uploadArticleImage":
+		if e.complexity.Mutation.UploadArticleImage == nil {
+			break
+		}
+
+		args, err := ec.field_Mutation_uploadArticleImage_args(context.TODO(), rawArgs)
+		if err != nil {
+			return 0, false
+		}
+
+		return e.complexity.Mutation.UploadArticleImage(childComplexity, args["input"].(*model.UploadArticleImageInput)), true
+
 	case "Project.articles":
 		if e.complexity.Project.Articles == nil {
 			break
@@ -820,6 +834,7 @@ func (e *executableSchema) Exec(ctx context.Context) graphql.ResponseHandler {
 		ec.unmarshalInputGetZincArticleInput,
 		ec.unmarshalInputTagData,
 		ec.unmarshalInputUpdatedArticleInfo,
+		ec.unmarshalInputUploadArticleImageInput,
 		ec.unmarshalInputUserCreation,
 	)
 	first := true
@@ -1096,6 +1111,21 @@ func (ec *executionContext) field_Mutation_updateArticle_args(ctx context.Contex
 	if tmp, ok := rawArgs["input"]; ok {
 		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
 		arg0, err = ec.unmarshalOUpdatedArticleInfo2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUpdatedArticleInfo(ctx, tmp)
+		if err != nil {
+			return nil, err
+		}
+	}
+	args["input"] = arg0
+	return args, nil
+}
+
+func (ec *executionContext) field_Mutation_uploadArticleImage_args(ctx context.Context, rawArgs map[string]interface{}) (map[string]interface{}, error) {
+	var err error
+	args := map[string]interface{}{}
+	var arg0 *model.UploadArticleImageInput
+	if tmp, ok := rawArgs["input"]; ok {
+		ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("input"))
+		arg0, err = ec.unmarshalOUploadArticleImageInput2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUploadArticleImageInput(ctx, tmp)
 		if err != nil {
 			return nil, err
 		}
@@ -3283,6 +3313,61 @@ func (ec *executionContext) fieldContext_Mutation_editUser(ctx context.Context, 
 	}()
 	ctx = graphql.WithFieldContext(ctx, fc)
 	if fc.Args, err = ec.field_Mutation_editUser_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
+		ec.Error(ctx, err)
+		return
+	}
+	return fc, nil
+}
+
+func (ec *executionContext) _Mutation_uploadArticleImage(ctx context.Context, field graphql.CollectedField) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Mutation_uploadArticleImage(ctx, field)
+	if err != nil {
+		return graphql.Null
+	}
+	ctx = graphql.WithFieldContext(ctx, fc)
+	defer func() {
+		if r := recover(); r != nil {
+			ec.Error(ctx, ec.Recover(ctx, r))
+			ret = graphql.Null
+		}
+	}()
+	resTmp, err := ec.ResolverMiddleware(ctx, func(rctx context.Context) (interface{}, error) {
+		ctx = rctx // use context from middleware stack in children
+		return ec.resolvers.Mutation().UploadArticleImage(rctx, fc.Args["input"].(*model.UploadArticleImageInput))
+	})
+	if err != nil {
+		ec.Error(ctx, err)
+		return graphql.Null
+	}
+	if resTmp == nil {
+		if !graphql.HasFieldError(ctx, fc) {
+			ec.Errorf(ctx, "must not be null")
+		}
+		return graphql.Null
+	}
+	res := resTmp.(string)
+	fc.Result = res
+	return ec.marshalNString2string(ctx, field.Selections, res)
+}
+
+func (ec *executionContext) fieldContext_Mutation_uploadArticleImage(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+	fc = &graphql.FieldContext{
+		Object:     "Mutation",
+		Field:      field,
+		IsMethod:   true,
+		IsResolver: true,
+		Child: func(ctx context.Context, field graphql.CollectedField) (*graphql.FieldContext, error) {
+			return nil, errors.New("field of type String does not have child fields")
+		},
+	}
+	defer func() {
+		if r := recover(); r != nil {
+			err = ec.Recover(ctx, r)
+			ec.Error(ctx, err)
+		}
+	}()
+	ctx = graphql.WithFieldContext(ctx, fc)
+	if fc.Args, err = ec.field_Mutation_uploadArticleImage_args(ctx, field.ArgumentMap(ec.Variables)); err != nil {
 		ec.Error(ctx, err)
 		return
 	}
@@ -7220,7 +7305,7 @@ func (ec *executionContext) unmarshalInputEditUser(ctx context.Context, obj inte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profilePic"))
-			it.ProfilePic, err = ec.unmarshalOFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
+			it.ProfilePic, err = ec.unmarshalNFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -7593,6 +7678,58 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("originalfoldername"))
 			it.Originalfoldername, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		}
+	}
+
+	return it, nil
+}
+
+func (ec *executionContext) unmarshalInputUploadArticleImageInput(ctx context.Context, obj interface{}) (model.UploadArticleImageInput, error) {
+	var it model.UploadArticleImageInput
+	asMap := map[string]interface{}{}
+	for k, v := range obj.(map[string]interface{}) {
+		asMap[k] = v
+	}
+
+	fieldsInOrder := [...]string{"file", "project_uuid", "article_uuid", "article_name"}
+	for _, k := range fieldsInOrder {
+		v, ok := asMap[k]
+		if !ok {
+			continue
+		}
+		switch k {
+		case "file":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
+			it.File, err = ec.unmarshalNFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "project_uuid":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
+			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "article_uuid":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("article_uuid"))
+			it.ArticleUUID, err = ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+		case "article_name":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("article_name"))
+			it.ArticleName, err = ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
@@ -8163,6 +8300,15 @@ func (ec *executionContext) _Mutation(ctx context.Context, sel ast.SelectionSet)
 
 			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
 				return ec._Mutation_editUser(ctx, field)
+			})
+
+			if out.Values[i] == graphql.Null {
+				invalids++
+			}
+		case "uploadArticleImage":
+
+			out.Values[i] = ec.OperationContext.RootResolverMiddleware(innerCtx, func(ctx context.Context) (res graphql.Marshaler) {
+				return ec._Mutation_uploadArticleImage(ctx, field)
 			})
 
 			if out.Values[i] == graphql.Null {
@@ -9083,6 +9229,11 @@ func (ec *executionContext) marshalNBoolean2bool(ctx context.Context, sel ast.Se
 	return res
 }
 
+func (ec *executionContext) unmarshalNFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx context.Context, v interface{}) (*model.File, error) {
+	res, err := ec.unmarshalInputFile(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
+}
+
 func (ec *executionContext) marshalNImage2githubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐImage(ctx context.Context, sel ast.SelectionSet, v model.Image) graphql.Marshaler {
 	return ec._Image(ctx, sel, &v)
 }
@@ -9828,6 +9979,14 @@ func (ec *executionContext) marshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgen�
 	}
 	res := graphql.MarshalUpload(*v)
 	return res
+}
+
+func (ec *executionContext) unmarshalOUploadArticleImageInput2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUploadArticleImageInput(ctx context.Context, v interface{}) (*model.UploadArticleImageInput, error) {
+	if v == nil {
+		return nil, nil
+	}
+	res, err := ec.unmarshalInputUploadArticleImageInput(ctx, v)
+	return &res, graphql.ErrorOnPath(ctx, err)
 }
 
 func (ec *executionContext) marshalOUser2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐUser(ctx context.Context, sel ast.SelectionSet, v *model.User) graphql.Marshaler {

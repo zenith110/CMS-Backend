@@ -105,7 +105,7 @@ type EditUser struct {
 	Jwt        string `json:"jwt"`
 	Role       string `json:"role"`
 	Name       string `json:"name"`
-	ProfilePic *File  `json:"profilePic,omitempty"`
+	ProfilePic *File  `json:"profilePic"`
 	Bio        string `json:"bio"`
 }
 
@@ -192,6 +192,13 @@ type UpdatedArticleInfo struct {
 	Jwt                string    `json:"jwt"`
 	ProjectUUID        string    `json:"project_uuid"`
 	Originalfoldername string    `json:"originalfoldername"`
+}
+
+type UploadArticleImageInput struct {
+	File        *File  `json:"file"`
+	ProjectUUID string `json:"project_uuid"`
+	ArticleUUID string `json:"article_uuid"`
+	ArticleName string `json:"article_name"`
 }
 
 type User struct {

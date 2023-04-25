@@ -28,8 +28,15 @@ type Mutation {
   deleteUser(input: DeleteUser): String!
   deleteAllUsers(jwt: String!): String!
   editUser(input: EditUser): String!
+  uploadArticleImage(input: UploadArticleImageInput): String!
 }
 
+input UploadArticleImageInput{
+  file: File!
+  project_uuid: String!
+  article_uuid: String!
+  article_name: String!
+}
 input EditUser{
   uuid: String!
   email: String!
@@ -38,7 +45,7 @@ input EditUser{
   jwt: String!
   role: String!
   name: String!
-  profilePic: File
+  profilePic: File!
   bio: String!
 }
 input DeleteUser{
