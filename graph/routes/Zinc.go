@@ -93,21 +93,7 @@ func DeleteDocument(index string, data string, uuid string, userName string, pas
 		"article state": "Returning response",
 	}).Info(fmt.Sprintf("Article data: %s", string(body)))
 }
-func SearchDocuments(indexName string, searchTerm string, userName string, password string) []byte {
-	zincBaseUrl := os.Getenv("ZINCBASE")
-	if searchTerm == "" {
-
-	}
-	query := fmt.Sprintf(`{
-        "search_type": "fuzzy",
-        "query":
-        {
-            "term": "%s"
-        },
-        "from": 0,
-        "max_results": 20,
-        "_source": []
-    }`, searchTerm)
+func SearchResults(query string, zincBaseUrl string, userName string, password string, indexName string) []byte {
 	finalURL := fmt.Sprintf("%s/api/%s/_search", zincBaseUrl, indexName)
 
 	req, err := http.NewRequest("POST", finalURL, strings.NewReader(query))
@@ -128,8 +114,34 @@ func SearchDocuments(indexName string, searchTerm string, userName string, passw
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	return body
+}
+func SearchDocuments(indexName string, searchTerm string, userName string, password string) []byte {
+	zincBaseUrl := os.Getenv("ZINCBASE")
+	if searchTerm == "" {
+		query := `{
+			"search_type": "matchall",
+			"from": 0,
+			"max_results": 20,
+			"_source": []
+		}`
+		results := SearchResults(query, zincBaseUrl, userName, password, indexName)
+		return results
+	}
+	query := fmt.Sprintf(`{
+        "search_type": "fuzzy",
+        "query":
+        {
+            "term": "%s",
+			"field": "title"
+        },
+        "from": 0,
+        "max_results": 20,
+        "_source": []
+    }`, searchTerm)
+	results := SearchResults(query, zincBaseUrl, userName, password, indexName)
+
+	return results
 }
 func DeleteIndex(index string, username string, password string) {
 	data := ""
