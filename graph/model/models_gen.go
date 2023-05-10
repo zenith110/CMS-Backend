@@ -29,7 +29,7 @@ type ArticleTagInput struct {
 type Articles struct {
 	Article      []Article `json:"article"`
 	Total        int       `json:"total"`
-	ZincPassword string    `json:"zincPassword"`
+	ZincPassword string    `json:"ZincPassword"`
 }
 
 type ArticlesPrivate struct {

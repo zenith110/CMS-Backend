@@ -290,7 +290,7 @@ func (e *executableSchema) Complexity(typeName, field string, childComplexity in
 
 		return e.complexity.Articles.Total(childComplexity), true
 
-	case "Articles.zincPassword":
+	case "Articles.ZincPassword":
 		if e.complexity.Articles.ZincPassword == nil {
 			break
 		}
@@ -1854,8 +1854,8 @@ func (ec *executionContext) fieldContext_Articles_total(ctx context.Context, fie
 	return fc, nil
 }
 
-func (ec *executionContext) _Articles_zincPassword(ctx context.Context, field graphql.CollectedField, obj *model.Articles) (ret graphql.Marshaler) {
-	fc, err := ec.fieldContext_Articles_zincPassword(ctx, field)
+func (ec *executionContext) _Articles_ZincPassword(ctx context.Context, field graphql.CollectedField, obj *model.Articles) (ret graphql.Marshaler) {
+	fc, err := ec.fieldContext_Articles_ZincPassword(ctx, field)
 	if err != nil {
 		return graphql.Null
 	}
@@ -1885,7 +1885,7 @@ func (ec *executionContext) _Articles_zincPassword(ctx context.Context, field gr
 	return ec.marshalNString2string(ctx, field.Selections, res)
 }
 
-func (ec *executionContext) fieldContext_Articles_zincPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
+func (ec *executionContext) fieldContext_Articles_ZincPassword(ctx context.Context, field graphql.CollectedField) (fc *graphql.FieldContext, err error) {
 	fc = &graphql.FieldContext{
 		Object:     "Articles",
 		Field:      field,
@@ -3505,8 +3505,8 @@ func (ec *executionContext) fieldContext_Project_articles(ctx context.Context, f
 				return ec.fieldContext_Articles_article(ctx, field)
 			case "total":
 				return ec.fieldContext_Articles_total(ctx, field)
-			case "zincPassword":
-				return ec.fieldContext_Articles_zincPassword(ctx, field)
+			case "ZincPassword":
+				return ec.fieldContext_Articles_ZincPassword(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Articles", field.Name)
 		},
@@ -3816,8 +3816,8 @@ func (ec *executionContext) fieldContext_Query_articlesPrivate(ctx context.Conte
 				return ec.fieldContext_Articles_article(ctx, field)
 			case "total":
 				return ec.fieldContext_Articles_total(ctx, field)
-			case "zincPassword":
-				return ec.fieldContext_Articles_zincPassword(ctx, field)
+			case "ZincPassword":
+				return ec.fieldContext_Articles_ZincPassword(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Articles", field.Name)
 		},
@@ -3876,8 +3876,8 @@ func (ec *executionContext) fieldContext_Query_articlesPublic(ctx context.Contex
 				return ec.fieldContext_Articles_article(ctx, field)
 			case "total":
 				return ec.fieldContext_Articles_total(ctx, field)
-			case "zincPassword":
-				return ec.fieldContext_Articles_zincPassword(ctx, field)
+			case "ZincPassword":
+				return ec.fieldContext_Articles_ZincPassword(ctx, field)
 			}
 			return nil, fmt.Errorf("no field named %q was found under type Articles", field.Name)
 		},
@@ -8066,9 +8066,9 @@ func (ec *executionContext) _Articles(ctx context.Context, sel ast.SelectionSet,
 			if out.Values[i] == graphql.Null {
 				invalids++
 			}
-		case "zincPassword":
+		case "ZincPassword":
 
-			out.Values[i] = ec._Articles_zincPassword(ctx, field, obj)
+			out.Values[i] = ec._Articles_ZincPassword(ctx, field, obj)
 
 			if out.Values[i] == graphql.Null {
 				invalids++

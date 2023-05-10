@@ -216,7 +216,7 @@ input ArticleTagInput {
 type Articles {
   article: [Article!]!
   total: Int!
-  zincPassword: String!
+  ZincPassword: String!
 }
 type Tag {
   tag: String!

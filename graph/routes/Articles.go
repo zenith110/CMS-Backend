@@ -124,7 +124,6 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 	}
 
 	var articles = model.Articles{Article: articlesStorage, Total: totalArticles}
-	log.Println(articlesStorage)
 	return &articles, zincError
 }
 func DeleteArticles(input *model.DeleteAllArticlesInput) (string, error) {
