@@ -3,7 +3,7 @@ module github.com/zenith110/CMS-Backend
 go 1.20
 
 require (
-	github.com/99designs/gqlgen v0.17.27
+	github.com/99designs/gqlgen v0.17.31
 	github.com/aws/aws-sdk-go v1.44.198
 	github.com/go-chi/chi v1.5.4
 	github.com/go-redis/redis v6.15.9+incompatible
@@ -16,7 +16,7 @@ require (
 	github.com/vektah/gqlparser/v2 v2.5.1
 	go.mongodb.org/mongo-driver v1.11.1
 	golang.org/x/crypto v0.0.0-20220622213112-05595931fe9d
-	golang.org/x/exp v0.0.0-20230321023759-10a507213a29
+	golang.org/x/exp v0.0.0-20230425010034-47ecfdc1ba53
 )
 
 require (

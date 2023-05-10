@@ -106,7 +106,7 @@ func FetchArticlesZinc(input *model.GetZincArticleInput) (*model.Articles, error
 	// Create a temporary array of pointers for Article
 	var articlesStorage []model.Article
 	var zinc Zinc
-	data := SearchDocuments(fmt.Sprintf("%s-articles", username), input.Keyword, username, password)
+	data := SearchDocuments(fmt.Sprintf("%s-articles", username), input.Keyword, username, password, input.PageNumber)
 	zincError := json.Unmarshal(data, &zinc)
 	if zincError != nil {
 		panic(fmt.Errorf("error is %v", zincError))

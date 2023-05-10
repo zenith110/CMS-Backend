@@ -6793,10 +6793,11 @@ func (ec *executionContext) unmarshalInputArticleTagInput(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
-			it.Keyword, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Keyword = data
 		}
 	}
 
@@ -6821,18 +6822,20 @@ func (ec *executionContext) unmarshalInputArticlesPrivate(ctx context.Context, o
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "project_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		}
 	}
 
@@ -6857,10 +6860,11 @@ func (ec *executionContext) unmarshalInputAuthorInput(ctx context.Context, obj i
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Name = data
 		}
 	}
 
@@ -6885,82 +6889,92 @@ func (ec *executionContext) unmarshalInputCreateArticleInfo(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Title = data
 		case "titleCard":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("titleCard"))
-			it.TitleCard, err = ec.unmarshalOFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
+			data, err := ec.unmarshalOFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TitleCard = data
 		case "contentData":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contentData"))
-			it.ContentData, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ContentData = data
 		case "dateWritten":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateWritten"))
-			it.DateWritten, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.DateWritten = data
 		case "url":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
-			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.URL = data
 		case "description":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Description = data
 		case "uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		case "tags":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			it.Tags, err = ec.unmarshalOTagData2ᚕgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐTagDataᚄ(ctx, v)
+			data, err := ec.unmarshalOTagData2ᚕgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐTagDataᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Tags = data
 		case "jwt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "project_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		}
 	}
 
@@ -6985,42 +6999,47 @@ func (ec *executionContext) unmarshalInputCreateProjectInput(ctx context.Context
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		case "name":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Name = data
 		case "jwt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "role":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
-			it.Role, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Role = data
 		case "description":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			it.Description, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Description = data
 		}
 	}
 
@@ -7045,18 +7064,20 @@ func (ec *executionContext) unmarshalInputDeleteAllArticlesInput(ctx context.Con
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "project_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		}
 	}
 
@@ -7081,10 +7102,11 @@ func (ec *executionContext) unmarshalInputDeleteAllProjects(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		}
 	}
 
@@ -7109,42 +7131,47 @@ func (ec *executionContext) unmarshalInputDeleteBucketInfo(ctx context.Context, 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		case "jwt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "project_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		case "articlename":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("articlename"))
-			it.Articlename, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Articlename = data
 		case "username":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Username = data
 		}
 	}
 
@@ -7169,26 +7196,29 @@ func (ec *executionContext) unmarshalInputDeleteProjectType(ctx context.Context,
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "project":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project"))
-			it.Project, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Project = data
 		case "uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		}
 	}
 
@@ -7213,18 +7243,20 @@ func (ec *executionContext) unmarshalInputDeleteUser(ctx context.Context, obj in
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		case "jwt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		}
 	}
 
@@ -7249,74 +7281,83 @@ func (ec *executionContext) unmarshalInputEditUser(ctx context.Context, obj inte
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		case "email":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Email = data
 		case "username":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Username = data
 		case "password":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Password = data
 		case "jwt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "role":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
-			it.Role, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Role = data
 		case "name":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Name = data
 		case "profilePic":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profilePic"))
-			it.ProfilePic, err = ec.unmarshalNFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
+			data, err := ec.unmarshalNFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProfilePic = data
 		case "bio":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bio"))
-			it.Bio, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Bio = data
 		}
 	}
 
@@ -7341,42 +7382,47 @@ func (ec *executionContext) unmarshalInputFile(ctx context.Context, obj interfac
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Name = data
 		case "fileData":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("fileData"))
-			it.FileData, err = ec.unmarshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
+			data, err := ec.unmarshalOUpload2ᚖgithubᚗcomᚋ99designsᚋgqlgenᚋgraphqlᚐUpload(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.FileData = data
 		case "contentType":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contentType"))
-			it.ContentType, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ContentType = data
 		case "description":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Description = data
 		case "url":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
-			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.URL = data
 		}
 	}
 
@@ -7401,26 +7447,29 @@ func (ec *executionContext) unmarshalInputFindArticlePrivateType(ctx context.Con
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "project_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		case "uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		}
 	}
 
@@ -7445,18 +7494,20 @@ func (ec *executionContext) unmarshalInputFindArticlePublicType(ctx context.Cont
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		case "article_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("article_uuid"))
-			it.ArticleUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ArticleUUID = data
 		}
 	}
 
@@ -7481,10 +7532,11 @@ func (ec *executionContext) unmarshalInputGetProjectType(ctx context.Context, ob
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		}
 	}
 
@@ -7498,7 +7550,7 @@ func (ec *executionContext) unmarshalInputGetZincArticleInput(ctx context.Contex
 		asMap[k] = v
 	}
 
-	fieldsInOrder := [...]string{"project_uuid", "keyword", "username", "password"}
+	fieldsInOrder := [...]string{"project_uuid", "keyword", "username", "password", "pageNumber"}
 	for _, k := range fieldsInOrder {
 		v, ok := asMap[k]
 		if !ok {
@@ -7509,34 +7561,47 @@ func (ec *executionContext) unmarshalInputGetZincArticleInput(ctx context.Contex
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		case "keyword":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("keyword"))
-			it.Keyword, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Keyword = data
 		case "username":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Username = data
 		case "password":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Password = data
+		case "pageNumber":
+			var err error
+
+			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("pageNumber"))
+			data, err := ec.unmarshalNString2string(ctx, v)
+			if err != nil {
+				return it, err
+			}
+			it.PageNumber = data
 		}
 	}
 
@@ -7561,10 +7626,11 @@ func (ec *executionContext) unmarshalInputTagData(ctx context.Context, obj inter
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Name = data
 		}
 	}
 
@@ -7589,98 +7655,110 @@ func (ec *executionContext) unmarshalInputUpdatedArticleInfo(ctx context.Context
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("title"))
-			it.Title, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Title = data
 		case "titleCard":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("titleCard"))
-			it.TitleCard, err = ec.unmarshalOFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
+			data, err := ec.unmarshalOFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.TitleCard = data
 		case "author":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("author"))
-			it.Author, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Author = data
 		case "contentData":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("contentData"))
-			it.ContentData, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ContentData = data
 		case "dateWritten":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("dateWritten"))
-			it.DateWritten, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.DateWritten = data
 		case "url":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("url"))
-			it.URL, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.URL = data
 		case "description":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("description"))
-			it.Description, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Description = data
 		case "uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalOString2ᚖstring(ctx, v)
+			data, err := ec.unmarshalOString2ᚖstring(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		case "tags":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("tags"))
-			it.Tags, err = ec.unmarshalOTagData2ᚕgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐTagDataᚄ(ctx, v)
+			data, err := ec.unmarshalOTagData2ᚕgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐTagDataᚄ(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Tags = data
 		case "jwt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "project_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		case "originalfoldername":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("originalfoldername"))
-			it.Originalfoldername, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Originalfoldername = data
 		}
 	}
 
@@ -7705,34 +7783,38 @@ func (ec *executionContext) unmarshalInputUploadArticleImageInput(ctx context.Co
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("file"))
-			it.File, err = ec.unmarshalNFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
+			data, err := ec.unmarshalNFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.File = data
 		case "project_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("project_uuid"))
-			it.ProjectUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProjectUUID = data
 		case "article_uuid":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("article_uuid"))
-			it.ArticleUUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ArticleUUID = data
 		case "article_name":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("article_name"))
-			it.ArticleName, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ArticleName = data
 		}
 	}
 
@@ -7757,74 +7839,83 @@ func (ec *executionContext) unmarshalInputUserCreation(ctx context.Context, obj 
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("uuid"))
-			it.UUID, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.UUID = data
 		case "email":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("email"))
-			it.Email, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Email = data
 		case "username":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("username"))
-			it.Username, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Username = data
 		case "password":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("password"))
-			it.Password, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Password = data
 		case "jwt":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("jwt"))
-			it.Jwt, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Jwt = data
 		case "role":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("role"))
-			it.Role, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Role = data
 		case "name":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("name"))
-			it.Name, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Name = data
 		case "profilePic":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("profilePic"))
-			it.ProfilePic, err = ec.unmarshalOFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
+			data, err := ec.unmarshalOFile2ᚖgithubᚗcomᚋzenith110ᚋCMSᚑBackendᚋgraphᚋmodelᚐFile(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.ProfilePic = data
 		case "bio":
 			var err error
 
 			ctx := graphql.WithPathContext(ctx, graphql.NewPathWithField("bio"))
-			it.Bio, err = ec.unmarshalNString2string(ctx, v)
+			data, err := ec.unmarshalNString2string(ctx, v)
 			if err != nil {
 				return it, err
 			}
+			it.Bio = data
 		}
 	}
 

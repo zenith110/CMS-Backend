@@ -83,6 +83,7 @@ input GetZincArticleInput{
   keyword: String!
   username: String!
   password: String!
+  pageNumber: String!
 }
 input GetProjectType{
   jwt: String!

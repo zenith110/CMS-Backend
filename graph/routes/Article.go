@@ -196,8 +196,9 @@ func UpdateArticle(input *model.UpdatedArticleInfo) (*model.Article, error) {
 		"UUID":        "%s",
 		"TitleCard":   "%s",
 		"Tags":        "%s",
-		"Project": 	   "%s"
-	}`, *input.Title, username, *input.ContentData, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID)
+		"Project": 	   "%s",
+		"DateWritten": "%s"
+	}`, *input.Title, username, *input.ContentData, *input.URL, *input.Description, *input.UUID, imageURL, strings.Join(tagsString, ","), input.ProjectUUID, *input.DateWritten)
 	UpdateDocument(fmt.Sprintf("%s-articles", zincusername), zincData, zincusername, zincpassword, *input.UUID)
 	return &article, ArticleUpdateerr
 }

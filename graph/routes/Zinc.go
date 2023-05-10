@@ -116,15 +116,15 @@ func SearchResults(query string, zincBaseUrl string, userName string, password s
 	}
 	return body
 }
-func SearchDocuments(indexName string, searchTerm string, userName string, password string) []byte {
+func SearchDocuments(indexName string, searchTerm string, userName string, password string, pageNumber string) []byte {
 	zincBaseUrl := os.Getenv("ZINCBASE")
 	if searchTerm == "" {
-		query := `{
+		query := fmt.Sprintf(`{
 			"search_type": "matchall",
-			"from": 0,
+			"from": %s,
 			"max_results": 20,
 			"_source": []
-		}`
+		}`, pageNumber)
 		results := SearchResults(query, zincBaseUrl, userName, password, indexName)
 		return results
 	}

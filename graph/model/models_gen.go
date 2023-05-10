@@ -142,6 +142,7 @@ type GetZincArticleInput struct {
 	Keyword     string `json:"keyword"`
 	Username    string `json:"username"`
 	Password    string `json:"password"`
+	PageNumber  string `json:"pageNumber"`
 }
 
 type Image struct {
