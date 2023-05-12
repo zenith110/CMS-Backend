@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"image"
+	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"os"
@@ -72,6 +73,14 @@ func ProcessImages(storage map[string]any) bytes.Buffer {
 		err = jpeg.Encode(&buffer, srcImage, &options)
 		if err != nil {
 			panic(fmt.Errorf("error has occured! could not convert image to png\n%v", err))
+		}
+	case "image/gif":
+		options := gif.Options{
+			NumColors: 256,
+		}
+		err = gif.Encode(&buffer, srcImage, &options)
+		if err != nil {
+			panic(fmt.Errorf("error has occured! could not convert image to gif\n%v", err))
 		}
 	}
 	return buffer
