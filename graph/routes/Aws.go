@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"image"
-	"image/gif"
 	"image/jpeg"
 	"image/png"
 	"os"
@@ -73,14 +72,6 @@ func ProcessImages(storage map[string]any) bytes.Buffer {
 		err = jpeg.Encode(&buffer, srcImage, &options)
 		if err != nil {
 			panic(fmt.Errorf("error has occured! could not convert image to png\n%v", err))
-		}
-	case "image/gif":
-		options := gif.Options{
-			NumColors: 256,
-		}
-		err = gif.Encode(&buffer, srcImage, &options)
-		if err != nil {
-			panic(fmt.Errorf("error has occured! could not convert image to gif\n%v", err))
 		}
 	}
 	return buffer
@@ -274,57 +265,6 @@ func UploadAvatarImageCreation(input *model.UserCreation) string {
 		return url
 	}
 }
-
-func UploadArticleImages(input *model.UploadArticleImageInput) (string, error) {
-	fmt.Print(input)
-	session := CreateAWSSession()
-	s3ConnectionUploader := s3manager.NewUploader(session)
-	srcImage, _, err := image.Decode(input.File.FileData.File)
-	if err != nil {
-		panic(fmt.Errorf("error has occured!\n%v", err))
-	}
-	var buffer bytes.Buffer
-	storage := map[string]any{
-		"buffer":           buffer,
-		"imageContentType": *input.File.ContentType,
-		"srcImage":         srcImage,
-	}
-	finalImageBuffer := ProcessImages(storage)
-	finalImage := bytes.NewReader(finalImageBuffer.Bytes())
-	s3sc := s3.New(session)
-	bucketName := fmt.Sprintf("%s-images", input.ProjectUUID)
-	bucketExist := CheckIfBucketExist(s3sc, bucketName)
-	if bucketExist == true {
-		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
-			Bucket:      aws.String(bucketName),
-			Key:         aws.String(input.ArticleName + "/" + *input.File.Name),
-			Body:        finalImage,
-			ACL:         aws.String("public-read"),
-			ContentType: aws.String(*input.File.ContentType),
-		})
-
-		if err != nil {
-			panic(fmt.Errorf("error has occured! %s", err))
-		}
-		url := fmt.Sprintf("https://%s-images.s3.%s.amazonaws.com/%s/%s", input.ProjectUUID, os.Getenv("AWS_REGION"), input.ArticleName, *input.File.Name)
-		return url, err
-	} else {
-		CreateProjectBucket(s3sc, bucketName)
-		_, err = s3ConnectionUploader.Upload(&s3manager.UploadInput{
-			Bucket:      aws.String(bucketName),
-			Key:         aws.String(input.ArticleName + "/" + *input.File.Name),
-			Body:        finalImage,
-			ACL:         aws.String("public-read"),
-			ContentType: aws.String(*input.File.ContentType),
-		})
-
-		if err != nil {
-			panic(fmt.Errorf("error has occured! %s", err))
-		}
-		url := fmt.Sprintf("https://%s-images.s3.%s.amazonaws.com/%s/%s", input.ProjectUUID, os.Getenv("AWS_REGION"), input.ArticleName, *input.File.Name)
-		return url, err
-	}
-}
 func exitErrorf(msg string, args ...interface{}) {
 	fmt.Fprintf(os.Stderr, msg+"\n", args...)
 	os.Exit(1)
@@ -348,12 +288,15 @@ func CheckIfBucketExist(s3sc *s3.S3, bucketName string) bool {
 func CreateProjectBucket(s3sc *s3.S3, bucketName string) {
 	var err error
 	_, err = s3sc.CreateBucket(&s3.CreateBucketInput{
-		Bucket: aws.String(bucketName),
+		Bucket:          aws.String(bucketName),
+		ObjectOwnership: aws.String("ObjectWriter"),
 	})
 	if err != nil {
 		exitErrorf("Unable to create bucket %q, %v", bucketName, err)
 	}
-
+	s3sc.DeletePublicAccessBlock(&s3.DeletePublicAccessBlockInput{
+		Bucket: aws.String(bucketName),
+	})
 	// Wait until bucket is created before finishing
 	fmt.Printf("Waiting for bucket %q to be created...\n", bucketName)
 
