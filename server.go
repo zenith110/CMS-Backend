@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
+
 	"github.com/99designs/gqlgen/graphql/handler"
 	"github.com/99designs/gqlgen/graphql/handler/transport"
 	"github.com/99designs/gqlgen/graphql/playground"
@@ -13,7 +15,6 @@ import (
 	"github.com/zenith110/CMS-Backend/graph"
 	generated "github.com/zenith110/CMS-Backend/graph"
 	"github.com/zenith110/CMS-Backend/graph/routes"
-	"strings"
 	"golang.org/x/exp/slices"
 )
 
@@ -24,7 +25,6 @@ func main() {
 	domainsString := os.Getenv("DOMAINS")
 	environment := os.Getenv("ENV")
 	domains := strings.Split(domainsString, ",")
-	log.Printf("Domains accepted are %s", domains)
 	if port == "" {
 		port = defaultPort
 	}
@@ -33,7 +33,7 @@ func main() {
 	log.Printf("Environment is %s", environment)
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
-			AllowedOrigins:   []string{"https://*"},
+			AllowedOrigins:   domains,
 			AllowedMethods:   []string{http.MethodGet, http.MethodPost},
 			AllowCredentials: true,
 			Debug:            true,
