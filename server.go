@@ -30,6 +30,7 @@ func main() {
 	}
 	router := chi.NewRouter()
 	router.Use()
+	log.Printf("Domains allowed is %s", domainsString)
 	log.Printf("Environment is %s", environment)
 	if environment == "PROD" {
 		router.Use(cors.New(cors.Options{
